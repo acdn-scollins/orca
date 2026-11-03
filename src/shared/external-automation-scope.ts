@@ -12,14 +12,12 @@ import type {
   ExternalAutomationTarget
 } from './automations-types'
 
-export const EXTERNAL_AUTOMATION_PROVIDERS = [
-  'openclaw'
-] as const satisfies readonly ExternalAutomationProvider[]
+export const EXTERNAL_AUTOMATION_PROVIDERS: readonly ExternalAutomationProvider[] = []
 
 export function isExternalAutomationProvider(value: unknown): value is ExternalAutomationProvider {
   return (
     typeof value === 'string' &&
-    (EXTERNAL_AUTOMATION_PROVIDERS as readonly string[]).includes(value)
+    EXTERNAL_AUTOMATION_PROVIDERS.some((provider) => provider === value)
   )
 }
 

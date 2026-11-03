@@ -63,6 +63,9 @@ export function buildAiVaultRemoteResumeStartup(
   ) {
     return null
   }
+  if (session.agent === 'openclaw') {
+    throw new Error('OpenClaw integration is not included in this build.')
+  }
   const providerSession = getAiVaultAgentProviderSession(session)
   const accountEnv = managedDataAccountResumeEnv(session)
   return {

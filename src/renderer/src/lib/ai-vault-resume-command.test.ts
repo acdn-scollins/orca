@@ -83,6 +83,34 @@ function buildQueuedAiVaultResumeCommand(
 }
 
 describe('ai vault resume command runtime', () => {
+  it.each([
+    ['local', undefined],
+    ['ssh:retired-host', undefined],
+    ['ssh:retired-host', 'custom-openclaw']
+  ] as const)(
+    'refuses retired OpenClaw resume and copy on %s',
+    (executionHostId, commandOverride) => {
+      const args = {
+        state: makeState({ worktreePath: 'C:\\Users\\alice\\repo' }),
+        session: {
+          agent: 'openclaw' as const,
+          sessionId: 'legacy-session',
+          cwd: '/repo',
+          codexHome: null,
+          executionHostId,
+          resumeCommand: 'openclaw --resume legacy-session'
+        },
+        commandOverride
+      }
+      expect(() => buildAiVaultResumeStartupForWorktree(args)).toThrow(
+        'OpenClaw integration is not included'
+      )
+      expect(() => buildAiVaultResumeCopyCommandForWorktree(args)).toThrow(
+        'OpenClaw integration is not included'
+      )
+    }
+  )
+
   it.each(['local', 'ssh:reference-host'] as const)(
     'starts a fresh IDE reference on %s with model and environment preserved',
     (executionHostId) => {

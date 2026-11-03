@@ -5,6 +5,7 @@ import { resetSessionParseCacheForTests } from '../ai-vault/session-scanner-pars
 import { resetTranscriptConsumersForTests } from '../ai-vault/session-transcript-consumers'
 import type SyncDatabase from '../sqlite/sync-database'
 import { SessionSearchIndexer } from './session-search-indexer'
+import { installMergedSessionSourceFixture } from './session-search-merged-source-fixture'
 import {
   FakeSessionSearchClock,
   openSessionSearchIndexerHarness,
@@ -12,7 +13,7 @@ import {
   type SessionSearchIndexerHarness
 } from './session-search-indexer-test-fixture'
 
-// Use constituent OpenClaw roots; joined discovery labels cannot be split because paths may contain delimiters.
+installMergedSessionSourceFixture()
 
 const CAN_DENY_READ = process.platform !== 'win32' && process.getuid?.() !== 0
 const INTERVAL_MS = 20_000

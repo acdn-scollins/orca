@@ -70,11 +70,11 @@ describe('detectSkillProvidersInWsl', () => {
     expect(found).toEqual(['cursor'])
   })
 
-  it('ignores stray output that is not a recognized provider name', async () => {
+  it('ignores stray output and the retired OpenClaw provider', async () => {
     runWslProcessMock.mockResolvedValue({
       environmentResolved: true,
       code: 0,
-      stdout: 'codex\nsomething-else\n',
+      stdout: 'codex\nopenclaw\nsomething-else\n',
       stderr: '',
       timedOut: false
     })

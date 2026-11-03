@@ -11,6 +11,7 @@ import {
 import {
   api,
   DESKTOP_SELF_OWNER,
+  enableExternalAutomationProviderFixture,
   installAutomationsPageHarness,
   mocks,
   renderPage,
@@ -40,6 +41,7 @@ describe('AutomationsPage list rendering', () => {
     const { container } = await renderPage()
 
     expect(api.automations.listScoped).toHaveBeenCalledWith({ selector: { kind: 'self' } })
+    expect(api.automations.listExternalManagerForOwner).not.toHaveBeenCalled()
     expect(rows(container, 'automation-row')).toEqual(['Nightly', 'Weekly'])
   })
 
@@ -106,6 +108,7 @@ describe('AutomationsPage list rendering', () => {
   })
 
   it('lists external managers per captured owner rather than probing the machine', async () => {
+    enableExternalAutomationProviderFixture()
     api.automations.list.mockResolvedValue([])
     api.automations.listExternalManagerForOwner.mockImplementation(
       async ({ provider }: { provider: string }) =>
@@ -125,6 +128,7 @@ describe('AutomationsPage list rendering', () => {
   })
 
   it('routes each authority’s action to its own host when both report openclaw:local', async () => {
+    enableExternalAutomationProviderFixture()
     api.automations.list.mockResolvedValue([])
     api.automations.listExternalManagerForOwner.mockImplementation(
       async ({ provider }: { provider: string }) =>
@@ -560,11 +564,16 @@ describe('AutomationsPage owner conflicts', () => {
 describe('AutomationsPage refresh independence', () => {
   // A stalled per-host external provider probe must not block the automation list.
   it('settles the list even when the external manager probe never answers', async () => {
+    enableExternalAutomationProviderFixture()
     api.automations.listExternalManagerForOwner.mockReturnValue(new Promise(() => undefined))
 
     const { container } = await renderPage()
 
     expect(rows(container, 'automation-row')).toEqual(['Nightly'])
+    expect(api.automations.listExternalManagerForOwner).toHaveBeenCalledExactlyOnceWith({
+      owner: DESKTOP_SELF_OWNER,
+      provider: 'openclaw'
+    })
     expect((mocks.listPanel as { isRefreshing?: boolean } | null)?.isRefreshing).toBe(false)
   })
 })

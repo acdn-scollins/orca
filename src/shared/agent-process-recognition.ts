@@ -1,4 +1,5 @@
 import { getTuiAgentDetectCommands, isTuiAgent, TUI_AGENT_CONFIG } from './tui-agent-config'
+import { isTuiAgentEnabled } from './tui-agent-selection'
 import { EXACT_NODE_ENTRYPOINT_IDENTITIES } from './agent-node-entrypoint-identities'
 import { NODE_PACKAGE_SCRIPT_ENTRYPOINTS } from './agent-node-package-entrypoints'
 import type { AgentType } from './agent-status-types'
@@ -46,7 +47,7 @@ const PROCESS_TO_AGENT = new Map<string, TerminalAgent>([
 const AGENT_TYPE_IDS = new Set<string>(['dsb'])
 
 for (const [agent, config] of Object.entries(TUI_AGENT_CONFIG)) {
-  if (!isTuiAgent(agent)) {
+  if (!isTuiAgent(agent) || !isTuiAgentEnabled(agent)) {
     continue
   }
   AGENT_TYPE_IDS.add(agent)

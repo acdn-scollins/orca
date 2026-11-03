@@ -67,6 +67,32 @@ describe('orca cli worktree awareness', () => {
     spawnMock
   })
 
+  it.each([
+    [
+      'create',
+      '--repo',
+      'id:repo-1',
+      '--name',
+      'Retired agent',
+      '--prompt',
+      'test',
+      '--trigger',
+      'daily'
+    ],
+    ['edit', 'auto-1']
+  ])('rejects the removed OpenClaw provider on automation %s before dispatch', async (...args) => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await main(['automations', ...args, '--provider', 'openclaw', '--json'], '/tmp/repo')
+
+    expect(callMock).not.toHaveBeenCalled()
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({
+      ok: false,
+      error: { code: 'invalid_argument', message: 'Unknown provider: openclaw' }
+    })
+    expect(process.exitCode).toBe(1)
+  })
+
   it('creates an automation for the enclosing worktree by default', async () => {
     queueFixtures(
       callMock,

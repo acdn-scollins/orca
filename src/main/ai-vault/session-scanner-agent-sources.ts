@@ -19,7 +19,6 @@ import {
   isKiroSessionMetadataPath,
   kiroTranscriptPathForMetadata
 } from './session-scanner-kiro-parser'
-import { OPENCLAW_AGENT_SOURCE } from './openclaw-session-layout'
 import { isOmpConversationDirectory } from './session-scanner-omp-subagent-transcripts'
 import {
   claudeProjectsRootDirs,
@@ -250,7 +249,10 @@ export const AI_VAULT_AGENT_SOURCES: AiVaultAgentSourceTable = {
       ]),
     extensions: ['.jsonl']
   },
-  openclaw: OPENCLAW_AGENT_SOURCE,
+  openclaw: {
+    rootDirs: () => [],
+    extensions: []
+  },
   droid: {
     rootDirs: (options, wslHomeDirs) => [
       ...sessionRootDirs(options.droidSessionsDir ?? DROID_SESSIONS_DIR, wslHomeDirs, [

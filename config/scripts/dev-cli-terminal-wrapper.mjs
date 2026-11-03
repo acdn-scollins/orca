@@ -1,5 +1,6 @@
 import { chmodSync, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { quotePosixShell } from '../../src/shared/shell-argument-quoting.ts'
 
 function escapeWindowsBatchValue(value) {
   // Why: cmd.exe expands %NAME% even inside quotes, so literal path percent signs must be doubled.
@@ -26,7 +27,7 @@ export function prepareDevCliTerminalWrappers({
       }
     }
   } else {
-    const wrapperContent = `#!/usr/bin/env bash\nexport ORCA_USER_DATA_PATH=${JSON.stringify(userDataPath)}\nexport ORCA_DEV_CLI_INVOCATION=1\nexport ORCA_APP_EXECUTABLE=${JSON.stringify(electronExecutable)}\nexport ORCA_APP_EXECUTABLE_NEEDS_APP_ROOT=1\nexec node ${JSON.stringify(cliPath)} "$@"\n`
+    const wrapperContent = `#!/usr/bin/env bash\nexport ORCA_USER_DATA_PATH=${quotePosixShell(userDataPath)}\nexport ORCA_DEV_CLI_INVOCATION=1\nexport ORCA_APP_EXECUTABLE=${quotePosixShell(electronExecutable)}\nexport ORCA_APP_EXECUTABLE_NEEDS_APP_ROOT=1\nexec node ${quotePosixShell(cliPath)} "$@"\n`
     for (const targetDir of [binDir, userDataBinDir]) {
       for (const commandName of ['orca-dev', 'orca']) {
         const wrapperPath = path.join(targetDir, commandName)

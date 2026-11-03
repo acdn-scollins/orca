@@ -121,6 +121,9 @@ export function buildAiVaultLocalResumeStartup(
   }
 ): AiVaultResumeStartup {
   const { session, settings, embedCwd, clearEnvNames } = args
+  if (session.agent === 'openclaw') {
+    throw new Error('OpenClaw integration is not included in this build.')
+  }
   const { platform, codexHome, liveShell } = args.host
   const resumeFilePath = normalizeAiVaultResumeFilePath(session.filePath, platform)
   // Why: Pi resumes by transcript path, spelled for the shell it runs in (#24408).

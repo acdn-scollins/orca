@@ -38,6 +38,22 @@ function session(overrides: Partial<AiVaultSession> = {}): AiVaultSession {
 }
 
 describe('buildMobileAiVaultResumeLaunch', () => {
+  it.each(['local', 'ssh:retired-host'] as const)(
+    'refuses a saved OpenClaw resume on %s',
+    (executionHostId) => {
+      expect(() =>
+        buildMobileAiVaultResumeLaunch({
+          session: session({
+            agent: 'openclaw',
+            executionHostId,
+            resumeCommand: 'openclaw --resume legacy-session'
+          }),
+          workspacePlatform: 'darwin'
+        })
+      ).toThrow('OpenClaw integration is not included')
+    }
+  )
+
   it('resumes Cursor by conversation id with its default args and launch config like desktop', () => {
     const launch = buildMobileAiVaultResumeLaunch({
       session: session({ agent: 'cursor', sessionId: 'cursor-1' }),

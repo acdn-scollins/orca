@@ -46,7 +46,6 @@ export const TUI_AGENT_AUTO_PICK_ORDER = [
   'rovo',
   'hermes',
   'devin',
-  'openclaw',
   'codebuddy',
   'jcode'
 ] as const satisfies readonly TuiAgent[]
@@ -67,6 +66,7 @@ export function pickTuiAgent(
   const detectedSet = detected instanceof Set ? detected : new Set(detected)
   if (
     preferred &&
+    preferred !== 'openclaw' &&
     (detectedSet.has(preferred) || chosenUsable?.(preferred)) &&
     !disabledSet.has(preferred)
   ) {
@@ -100,7 +100,7 @@ export function haveSameDisabledTuiAgents(left: unknown, right: unknown): boolea
 }
 
 export function isTuiAgentEnabled(agent: TuiAgent, disabled?: Iterable<unknown> | null): boolean {
-  return !normalizeDisabledTuiAgents(disabled).includes(agent)
+  return agent !== 'openclaw' && !normalizeDisabledTuiAgents(disabled).includes(agent)
 }
 
 export function buildAgentAvailabilitySettingsUpdate(
@@ -126,5 +126,5 @@ export function filterEnabledTuiAgents<T extends TuiAgent>(
   disabled?: Iterable<unknown> | null
 ): T[] {
   const disabledSet = new Set(normalizeDisabledTuiAgents(disabled))
-  return [...agents].filter((agent) => !disabledSet.has(agent))
+  return [...agents].filter((agent) => agent !== 'openclaw' && !disabledSet.has(agent))
 }

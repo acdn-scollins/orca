@@ -23,6 +23,9 @@ import {
   type TranscriptMessage
 } from '../ai-vault/session-transcript-consumers'
 import { SELF_CONTAINED_TRANSCRIPT_AGENTS } from './session-search-index-consumer'
+import { installMergedSessionSourceFixture } from './session-search-merged-source-fixture'
+
+installMergedSessionSourceFixture()
 
 vi.mock('node:fs', async (importOriginal) => {
   const original = await importOriginal<typeof fs & { default: typeof fs }>()

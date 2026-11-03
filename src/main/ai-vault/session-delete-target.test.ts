@@ -150,24 +150,17 @@ describe('validateAiVaultSessionDeleteTarget', () => {
     expect(result.allowed).toBe(true)
   })
 
-  it('allows an openclaw path under <stateDir>/agents/.../sessions/...', () => {
+  it.each([
+    ['agent-1', 'sessions', 'session-1.jsonl'],
+    ['agent-1', 'session-1.jsonl']
+  ])('rejects removed OpenClaw session deletion for %j', (...segments) => {
     const result = validateAiVaultSessionDeleteTarget({
       agent: 'openclaw',
-      filePath: join(OPENCLAW_ROOT, 'agents', 'agent-1', 'sessions', 'session-1.jsonl'),
+      filePath: join(OPENCLAW_ROOT, 'agents', ...segments),
       executionHostId: 'local',
       rootOptions: { openclawStateDir: OPENCLAW_ROOT }
     })
-    expect(result.allowed).toBe(true)
-  })
-
-  it('rejects an openclaw path missing the sessions segment', () => {
-    const result = validateAiVaultSessionDeleteTarget({
-      agent: 'openclaw',
-      filePath: join(OPENCLAW_ROOT, 'agents', 'agent-1', 'session-1.jsonl'),
-      executionHostId: 'local',
-      rootOptions: { openclawStateDir: OPENCLAW_ROOT }
-    })
-    expect(result).toEqual({ allowed: false, agent: 'openclaw', reason: 'undiscoverable-path' })
+    expect(result).toEqual({ allowed: false, agent: 'openclaw', reason: 'unsupported-agent' })
   })
 
   it('rejects an agent whose own registry would keep a dangling entry (codex)', () => {
@@ -309,7 +302,7 @@ describe('validateAiVaultSessionDeleteTarget', () => {
     expect(result.allowed).toBe(true)
   })
 
-  it('allows an openclaw path whose stateDir already ends in agents', () => {
+  it('rejects removed OpenClaw deletion when the explicit root ends in agents', () => {
     const agentsRoot = join(OPENCLAW_ROOT, 'agents')
     const result = validateAiVaultSessionDeleteTarget({
       agent: 'openclaw',
@@ -317,7 +310,7 @@ describe('validateAiVaultSessionDeleteTarget', () => {
       executionHostId: 'local',
       rootOptions: { openclawStateDir: agentsRoot }
     })
-    expect(result.allowed).toBe(true)
+    expect(result).toEqual({ allowed: false, agent: 'openclaw', reason: 'unsupported-agent' })
   })
 })
 

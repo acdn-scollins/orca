@@ -7,6 +7,13 @@ import {
 } from './skill-install-provider-groups'
 
 describe('groupSkillInstallProviders', () => {
+  it('does not offer retired OpenClaw when an older host reports it', () => {
+    const groups = groupSkillInstallProviders('global', ['openclaw', 'codex'])
+    expect(groups.canonical.map((provider) => provider.id)).not.toContain('openclaw')
+    expect(groups.selectable.map((choice) => choice.provider.id)).not.toContain('openclaw')
+    expect(defaultSelectedSkillProviders(null).has('openclaw')).toBe(false)
+  })
+
   it('separates agents that read the canonical root from agents with their own', () => {
     const workspace = groupSkillInstallProviders('workspace')
     const global = groupSkillInstallProviders('global')

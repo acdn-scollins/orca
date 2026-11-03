@@ -11,6 +11,12 @@ import {
 } from './agent-process-recognition'
 
 describe('agent process recognition', () => {
+  it('does not recognize removed OpenClaw processes as agents', () => {
+    expect(recognizeAgentProcess('openclaw')).toBeNull()
+    expect(recognizeAgentProcessFromCommandLine('openclaw --resume legacy-session')).toBeNull()
+    expect(isRecognizedAgentType('openclaw')).toBe(false)
+  })
+
   it.each([
     '/usr/local/bin/dsb',
     '/usr/bin/deepseek-build',

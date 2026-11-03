@@ -63,13 +63,6 @@ const CASES = [
       )
   },
   {
-    agent: 'openclaw',
-    envVar: 'OPENCLAW_STATE_DIR',
-    absolute: '/srv/openclaw',
-    absoluteRoot: join('/srv/openclaw', 'agents'),
-    defaultRoot: () => join(homedir(), '.openclaw', 'agents')
-  },
-  {
     agent: 'kimi',
     envVar: 'KIMI_CODE_HOME',
     absolute: '/srv/kimi',
@@ -89,6 +82,17 @@ describe('agent scan roots from environment overrides', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
     vi.resetModules()
+  })
+
+  it('ignores OpenClaw environment overrides, explicit roots and WSL homes', async () => {
+    expect(await rootDirsFor('openclaw', { OPENCLAW_STATE_DIR: '/srv/openclaw' })).toEqual([])
+    const { AI_VAULT_AGENT_SOURCES } = await import('./session-scanner-agent-sources')
+    expect(
+      AI_VAULT_AGENT_SOURCES.openclaw?.rootDirs(
+        { openclawStateDir: '/explicit/current', openclawLegacyStateDir: '/explicit/legacy' },
+        ['/wsl/home/dev']
+      )
+    ).toEqual([])
   })
 
   it('finds Devin transcripts in a relocated platform data directory', async () => {

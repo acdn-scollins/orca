@@ -3,7 +3,12 @@
 import { act, createElement, StrictMode, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, type Mock, vi } from 'vitest'
-import type { Automation, AutomationRun } from '../../../../shared/automations-types'
+import type {
+  Automation,
+  AutomationRun,
+  ExternalAutomationProvider
+} from '../../../../shared/automations-types'
+import type * as ExternalAutomationScope from '../../../../shared/external-automation-scope'
 import {
   AUTOMATION_LIST_HOST_SCOPE_RUNTIME_CAPABILITY as LIST_HOST_SCOPE,
   AUTOMATION_OWNER_FENCING_RUNTIME_CAPABILITY as OWNER_FENCING,
@@ -23,6 +28,18 @@ import {
   RUNTIME_WORKSPACE_ID as RUNTIME_WORKSPACE_ID_FIXTURE,
   selfScopedList
 } from './automations-page-runtime-fixtures'
+
+const fixtureExternalProviders = vi.hoisted((): ExternalAutomationProvider[] => [])
+
+// Only external-manager fixtures enable providers; ordinary cases keep the production empty list.
+vi.mock('../../../../shared/external-automation-scope', async (importOriginal) => ({
+  ...(await importOriginal<typeof ExternalAutomationScope>()),
+  EXTERNAL_AUTOMATION_PROVIDERS: fixtureExternalProviders
+}))
+
+export function enableExternalAutomationProviderFixture(): void {
+  fixtureExternalProviders.push('openclaw')
+}
 
 export const RUNTIME_REPO_ID = RUNTIME_REPO_ID_FIXTURE
 export const RUNTIME_WORKSPACE_ID = RUNTIME_WORKSPACE_ID_FIXTURE
@@ -392,6 +409,7 @@ export function rows(container: HTMLElement, testId: string): string[] {
 export function installAutomationsPageHarness(): void {
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
+    fixtureExternalProviders.length = 0
     vi.clearAllMocks()
     // Confirmed capabilities are module-level and must not leak between tests.
     resetAutomationCapabilityProbes()

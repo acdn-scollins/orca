@@ -11,6 +11,7 @@ import {
 import { buildAutomationRrule } from '../../shared/automation-schedule-occurrences'
 import { isValidAutomationSchedule } from '../../shared/automation-schedule-parsing'
 import { isTuiAgent } from '../../shared/tui-agent-config'
+import { isTuiAgentEnabled } from '../../shared/tui-agent-selection'
 import {
   getOptionalPositiveIntegerFlag,
   getOptionalStringFlag,
@@ -73,7 +74,7 @@ function getOptionalDayFlag(flags: Map<string, string | boolean>): number | unde
 
 export function getProviderFlag(flags: Map<string, string | boolean>): TuiAgent {
   const provider = getRequiredStringFlag(flags, 'provider')
-  if (!isTuiAgent(provider)) {
+  if (!isTuiAgent(provider) || !isTuiAgentEnabled(provider)) {
     throw new RuntimeClientError('invalid_argument', `Unknown provider: ${provider}`)
   }
   return provider
@@ -86,7 +87,7 @@ export function getOptionalProviderFlag(
   if (provider === undefined) {
     return undefined
   }
-  if (!isTuiAgent(provider)) {
+  if (!isTuiAgent(provider) || !isTuiAgentEnabled(provider)) {
     throw new RuntimeClientError('invalid_argument', `Unknown provider: ${provider}`)
   }
   return provider

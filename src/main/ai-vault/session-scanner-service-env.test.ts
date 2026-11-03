@@ -41,7 +41,6 @@ describe('buildAiVaultServiceEnv', () => {
         KIMI_CODE_HOME: '/home/dev/.kimi-code',
         KIRO_HOME: '/home/dev/kiro-data',
         OMP_CODING_AGENT_DIR: '/home/dev/.omp/agent/sessions',
-        OPENCLAW_STATE_DIR: '/home/dev/.openclaw',
         PI_CODING_AGENT_DIR: '/home/dev/.pi/agent/sessions',
         PRIME_AGENT_CODING_AGENT_DIR: '/home/dev/.prime/agent',
         PRIME_AGENT_CODING_AGENT_SESSION_DIR: '/home/dev/.prime/legacy-sessions',
@@ -60,13 +59,18 @@ describe('buildAiVaultServiceEnv', () => {
       KIMI_CODE_HOME: '/home/dev/.kimi-code',
       KIRO_HOME: '/home/dev/kiro-data',
       OMP_CODING_AGENT_DIR: '/home/dev/.omp/agent/sessions',
-      OPENCLAW_STATE_DIR: '/home/dev/.openclaw',
       PI_CODING_AGENT_DIR: '/home/dev/.pi/agent/sessions',
       PRIME_AGENT_CODING_AGENT_DIR: '/home/dev/.prime/agent',
       PRIME_AGENT_CODING_AGENT_SESSION_DIR: '/home/dev/.prime/legacy-sessions',
       PRIME_AGENT_SESSION_DIR: '/home/dev/.prime/sessions',
       ELECTRON_RUN_AS_NODE: '1'
     })
+  })
+
+  it('does not forward the removed OpenClaw integration environment', () => {
+    const baseEnv = { OPENCLAW_STATE_DIR: '/home/dev/.openclaw' }
+    expect(buildAiVaultServiceEnv(baseEnv).OPENCLAW_STATE_DIR).toBeUndefined()
+    expect(buildRelayAiVaultServiceEnv(baseEnv).OPENCLAW_STATE_DIR).toBeUndefined()
   })
 
   it('keeps the OpenCode data-directory and database overrides', () => {

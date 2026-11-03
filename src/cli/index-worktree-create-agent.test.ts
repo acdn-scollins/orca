@@ -272,27 +272,40 @@ describe('orca cli worktree awareness', () => {
     process.exitCode = priorExitCode
   })
 
-  it('rejects unknown agents on worktree.create', async () => {
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const priorExitCode = process.exitCode
+  it.each(['wat', 'openclaw'])(
+    'rejects unknown or removed agent %s on worktree.create',
+    async (agent) => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+      const priorExitCode = process.exitCode
 
-    await main(
-      ['worktree', 'create', '--repo', 'id:repo-1', '--name', 'child', '--agent', 'wat', '--json'],
-      '/tmp/repo'
-    )
+      await main(
+        [
+          'worktree',
+          'create',
+          '--repo',
+          'id:repo-1',
+          '--name',
+          'child',
+          '--agent',
+          agent,
+          '--json'
+        ],
+        '/tmp/repo'
+      )
 
-    expect(callMock).not.toHaveBeenCalled()
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({
-      ok: false,
-      error: {
-        code: 'invalid_argument',
-        message: 'Unknown TUI agent "wat"'
-      }
-    })
-    expect(process.exitCode).toBe(1)
+      expect(callMock).not.toHaveBeenCalled()
+      expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({
+        ok: false,
+        error: {
+          code: 'invalid_argument',
+          message: `Unknown TUI agent "${agent}"`
+        }
+      })
+      expect(process.exitCode).toBe(1)
 
-    process.exitCode = priorExitCode
-  })
+      process.exitCode = priorExitCode
+    }
+  )
 
   it('rejects agent, prompt, and setup flags without values on worktree.create', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})

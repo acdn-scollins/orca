@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { resolveExternalAutomationScope } from './external-automation-owner-guard'
 import { AutomationOwnerConflictError } from '../../shared/automation-owner-conflict'
 import type { AutomationOwnerRef } from '../../shared/automation-owner-ref'
@@ -8,6 +8,13 @@ import {
 } from '../../shared/external-automation-scope'
 import type { ExternalAutomationProvider } from '../../shared/automations-types'
 import type { SshTarget } from '../../shared/ssh-types'
+import type * as ExternalAutomationScope from '../../shared/external-automation-scope'
+
+// Keep owner-fencing coverage independent of the disabled provider allowlist.
+vi.mock('../../shared/external-automation-scope', async (importOriginal) => ({
+  ...(await importOriginal<typeof ExternalAutomationScope>()),
+  isExternalAutomationProvider: (value: unknown) => value === 'openclaw'
+}))
 
 function sshTarget(overrides: Partial<SshTarget> = {}): SshTarget {
   return {

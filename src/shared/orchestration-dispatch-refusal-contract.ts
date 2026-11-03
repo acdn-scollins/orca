@@ -1,4 +1,5 @@
-import { TUI_AGENT_CONFIG } from './tui-agent-config'
+import { isTuiAgent, TUI_AGENT_CONFIG } from './tui-agent-config'
+import { isTuiAgentEnabled } from './tui-agent-selection'
 
 // Share refusal envelopes across runtime/CLI; retain call-site messages because older consumers may match published strings.
 
@@ -72,10 +73,13 @@ function taskNotStartableNextSteps(detail: TaskNotStartableDetail): string[] {
   ]
 }
 
-// Derive from detection’s expectedProcess keys: a five-name example was mistaken for an allowlist (#15125).
-// Launcher disablement does not gate detection; hand-started disabled agents still inject.
+// Use active detection entries; user-disabled launchers can still be hand-started (#15125).
 const RECOGNIZED_AGENT_PROCESS_NAMES = [
-  ...new Set(Object.values(TUI_AGENT_CONFIG).map((config) => config.expectedProcess))
+  ...new Set(
+    Object.entries(TUI_AGENT_CONFIG).flatMap(([agent, config]) =>
+      isTuiAgent(agent) && isTuiAgentEnabled(agent) ? [config.expectedProcess] : []
+    )
+  )
 ].sort()
 
 export function buildInjectRejectionMessage(terminal: string): string {

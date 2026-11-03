@@ -7,6 +7,22 @@ import {
 
 describe('tui agent detection commands', () => {
   it.each(['darwin', 'linux', 'win32', 'wsl'] as const)(
+    'does not probe or detect OpenClaw on %s',
+    (runtime) => {
+      expect(
+        getTuiAgentDetectionProbeCommands(KNOWN_TUI_AGENT_DETECTION_COMMANDS, runtime)
+      ).not.toContain('openclaw')
+      expect(
+        resolveDetectedTuiAgentIds(
+          KNOWN_TUI_AGENT_DETECTION_COMMANDS,
+          new Set(['openclaw', 'codex']),
+          runtime
+        )
+      ).toEqual(['codex'])
+    }
+  )
+
+  it.each(['darwin', 'linux', 'win32', 'wsl'] as const)(
     'detects modern and legacy Qoder once on %s',
     (runtime) => {
       const commands = KNOWN_TUI_AGENT_DETECTION_COMMANDS.filter(

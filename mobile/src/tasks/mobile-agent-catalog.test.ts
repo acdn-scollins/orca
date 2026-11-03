@@ -6,10 +6,10 @@ import { TUI_AGENT_AUTO_PICK_ORDER } from '../../../src/shared/tui-agent-selecti
 import { MOBILE_AGENT_CATALOG } from './mobile-agent-catalog'
 
 describe('mobile agent catalog', () => {
-  it('follows desktop auto-pick order and covers every configured TUI agent', () => {
+  it('follows desktop auto-pick order and excludes the removed OpenClaw integration', () => {
     expect(MOBILE_AGENT_CATALOG.map((agent) => agent.id)).toEqual([...TUI_AGENT_AUTO_PICK_ORDER])
     expect(new Set(MOBILE_AGENT_CATALOG.map((agent) => agent.id))).toEqual(
-      new Set(Object.keys(TUI_AGENT_CONFIG))
+      new Set(Object.keys(TUI_AGENT_CONFIG).filter((id) => id !== 'openclaw'))
     )
   })
 

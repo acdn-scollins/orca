@@ -1,6 +1,7 @@
 import type { TuiAgent } from './tui-agent'
 import {
   getTuiAgentDetectCommands,
+  isTuiAgent,
   TUI_AGENT_CONFIG,
   type TuiAgentConfig,
   type TuiAgentDetectionRuntime
@@ -19,9 +20,11 @@ export const KNOWN_TUI_AGENT_DETECTION_COMMANDS = buildTuiAgentDetectionCommands
 
 function buildTuiAgentDetectionCommands(): TuiAgentDetectionCommand[] {
   return Object.entries(TUI_AGENT_CONFIG).flatMap(([id, config]) =>
-    getTuiAgentDetectCommands(config).map((cmd) =>
-      buildTuiAgentDetectionCommand(id as TuiAgent, cmd, config)
-    )
+    id !== 'openclaw' && isTuiAgent(id)
+      ? getTuiAgentDetectCommands(config).map((cmd) =>
+          buildTuiAgentDetectionCommand(id, cmd, config)
+        )
+      : []
   )
 }
 

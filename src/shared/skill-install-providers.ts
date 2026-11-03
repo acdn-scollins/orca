@@ -1,4 +1,5 @@
 import type { TuiAgent } from './tui-agent'
+import { isTuiAgentEnabled } from './tui-agent-selection'
 
 /** Null segments use canonical .agents/skills without a separate placement; IDs match detected Orca agents. */
 type SkillInstallProviderEntry = {
@@ -10,7 +11,7 @@ type SkillInstallProviderEntry = {
   homeEnv?: string
 }
 
-export const SKILL_INSTALL_PROVIDERS = Object.freeze([
+const SKILL_INSTALL_PROVIDER_ENTRIES = [
   {
     id: 'codex',
     displayName: 'Codex',
@@ -269,7 +270,11 @@ export const SKILL_INSTALL_PROVIDERS = Object.freeze([
     globalSegments: null,
     workspaceSegments: null
   }
-] satisfies SkillInstallProviderEntry[])
+] satisfies SkillInstallProviderEntry[]
+
+export const SKILL_INSTALL_PROVIDERS = Object.freeze(
+  SKILL_INSTALL_PROVIDER_ENTRIES.filter((provider) => isTuiAgentEnabled(provider.id))
+)
 
 export type SkillInstallProviderDefinition = (typeof SKILL_INSTALL_PROVIDERS)[number]
 export type SkillInstallProviderId = SkillInstallProviderDefinition['id']

@@ -12,6 +12,7 @@ const HOME = '/home/test'
 const AGENTS_WITHOUT_INSTALL_PROVIDER: Partial<Record<TuiAgent, string>> = {
   'claude-agent-teams': 'detected only alongside claude, whose entry covers .claude/skills',
   aider: 'no skills support',
+  openclaw: 'retired integration; persisted agent IDs remain readable',
   hermes: 'Windows home under %LOCALAPPDATA% and opt-in project skills fit no table shape'
 }
 const WORKSPACE = '/workspace/current'

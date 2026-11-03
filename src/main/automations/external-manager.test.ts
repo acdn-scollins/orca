@@ -1,43 +1,38 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { runExternalAutomationAction } from './external-manager'
+import { listLocalManager } from './external-manager-discovery'
 import { mapOpenClawJobs } from './external-job-mappers'
-import { SSH_HOST_NOT_SERVED_MESSAGE } from '../providers/ssh-host-not-served-error'
-import type {
-  ExternalAutomationAction,
-  ExternalAutomationProvider
-} from '../../shared/automations-types'
+import { EXTERNAL_AUTOMATION_SCOPE_CODES } from '../../shared/external-automation-scope'
 import type * as Fs from 'node:fs'
+import type * as FsPromises from 'node:fs/promises'
 
 const runProcessMock = vi.hoisted(() => vi.fn())
-const existsSyncMock = vi.hoisted(() => vi.fn(() => false))
+const existsSyncMock = vi.hoisted(() => vi.fn())
+const readFileMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@orca/process-host', () => ({ runProcess: runProcessMock }))
-vi.mock('fs', async () => {
-  const actual = await vi.importActual<typeof Fs>('fs')
-  return {
-    ...actual,
-    existsSync: existsSyncMock
-  }
-})
+vi.mock('node:fs', async (importOriginal) => ({
+  ...(await importOriginal<typeof Fs>()),
+  existsSync: existsSyncMock
+}))
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof FsPromises>()),
+  readFile: readFileMock
+}))
 
 beforeEach(() => {
-  runProcessMock.mockReset()
-  runProcessMock.mockResolvedValue({
-    code: 0,
-    signal: null,
-    stdout: '',
-    stderr: '',
-    timedOut: false
+  vi.clearAllMocks()
+})
+
+describe('retired external automation integration', () => {
+  it('does not discover local jobs or look for a provider executable', async () => {
+    await expect(listLocalManager('openclaw')).resolves.toBeNull()
+    expect(existsSyncMock).not.toHaveBeenCalled()
+    expect(readFileMock).not.toHaveBeenCalled()
+    expect(runProcessMock).not.toHaveBeenCalled()
   })
-  existsSyncMock.mockReturnValue(false)
-})
 
-afterEach(() => {
-  vi.useRealTimers()
-})
-
-describe('runExternalAutomationAction', () => {
-  it('rejects job IDs that could be parsed as CLI options', async () => {
+  it('still rejects job IDs that could be parsed as CLI options', async () => {
     await expect(
       runExternalAutomationAction({
         managerId: 'openclaw:local',
@@ -47,64 +42,29 @@ describe('runExternalAutomationAction', () => {
         action: 'run'
       })
     ).rejects.toThrow('Invalid external automation job ID.')
-
     expect(runProcessMock).not.toHaveBeenCalled()
   })
 
-  it('rejects an action name that is not in the provider table', async () => {
-    await expect(
-      runExternalAutomationAction({
-        managerId: 'openclaw:local',
-        provider: 'openclaw',
-        target: { type: 'local' },
-        jobId: 'job-1',
-        action: 'purge' as ExternalAutomationAction
-      })
-    ).rejects.toThrow('Unsupported external automation action.')
-
-    expect(runProcessMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects an action inherited from the prototype chain', async () => {
-    await expect(
-      runExternalAutomationAction({
-        managerId: 'openclaw:local',
-        provider: 'openclaw',
-        target: { type: 'local' },
-        jobId: 'job-1',
-        action: 'toString' as unknown as ExternalAutomationAction
-      })
-    ).rejects.toThrow('Unsupported external automation action.')
-
-    expect(runProcessMock).not.toHaveBeenCalled()
-  })
-
-  it('rejects a provider that has no action table', async () => {
-    await expect(
-      runExternalAutomationAction({
-        managerId: 'openclaw:local',
-        provider: 'shellcat' as ExternalAutomationProvider,
-        target: { type: 'local' },
-        jobId: 'job-1',
-        action: 'run'
-      })
-    ).rejects.toThrow('Unsupported external automation action.')
-
-    expect(runProcessMock).not.toHaveBeenCalled()
-  })
-
-  it('refuses actions on an SSH host without launching locally', async () => {
-    await expect(
-      runExternalAutomationAction({
-        managerId: 'openclaw:ssh:ssh-1',
-        provider: 'openclaw',
-        target: { type: 'ssh', connectionId: 'ssh-1' },
-        jobId: 'job-1',
-        action: 'run'
-      })
-    ).rejects.toThrow(SSH_HOST_NOT_SERVED_MESSAGE)
-    expect(runProcessMock).not.toHaveBeenCalled()
-  })
+  it.each(['pause', 'resume', 'run', 'delete'] as const)(
+    'rejects a saved %s action on local and SSH hosts without launching a process',
+    async (action) => {
+      for (const target of [
+        { type: 'local' } as const,
+        { type: 'ssh', connectionId: 'ssh-1' } as const
+      ]) {
+        await expect(
+          runExternalAutomationAction({
+            managerId: 'openclaw:local',
+            provider: 'openclaw',
+            target,
+            jobId: 'job-1',
+            action
+          })
+        ).rejects.toThrow(EXTERNAL_AUTOMATION_SCOPE_CODES.providerNotAllowed)
+      }
+      expect(runProcessMock).not.toHaveBeenCalled()
+    }
+  )
 })
 
 describe('mapOpenClawJobs', () => {

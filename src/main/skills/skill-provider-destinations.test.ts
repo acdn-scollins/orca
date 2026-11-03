@@ -7,6 +7,19 @@ const HOME = join('/home', 'dev')
 const WORKSPACE = join('/repos', 'orca')
 
 describe('resolveSkillProviderDestinations', () => {
+  it('ignores a retired OpenClaw provider and its saved root override', () => {
+    expect(
+      resolveSkillProviderDestinations({
+        scope: 'global',
+        homeDirectory: HOME,
+        detectedProviders: ['openclaw', 'codex'],
+        providerRootOverrides: { openclaw: join(HOME, 'retired-root', 'skills') }
+      })
+    ).toEqual([
+      { provider: 'codex', readsCanonicalRoot: true, rootPath: join(HOME, '.agents', 'skills') }
+    ])
+  })
+
   it('gives an agent that reads the canonical root no placement of its own', () => {
     const destinations = resolveSkillProviderDestinations({
       scope: 'workspace',

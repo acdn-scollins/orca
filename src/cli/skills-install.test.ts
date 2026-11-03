@@ -292,13 +292,13 @@ describe('orca skills install/update', () => {
     expect(plan.plan.skills[0].ops.map((op) => op.path)).toEqual([paths.shared, paths.claude])
   })
 
-  it('rejects an unknown --agent value', async () => {
+  it.each(['nope', 'openclaw'])('rejects unknown or retired --agent value %s', async (agent) => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    await main(['skills', 'install', '--skill', NAME, '--agent', 'nope'], paths.root)
+    await main(['skills', 'install', '--skill', NAME, '--agent', agent], paths.root)
 
     expect(process.exitCode).toBe(1)
-    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('Unknown --agent value "nope"')
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain(`Unknown --agent value "${agent}"`)
   })
 
   it('plans the current project for --local, linking only into agent folders it has', async () => {

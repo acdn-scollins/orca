@@ -22,6 +22,8 @@
 
 <h3 align="center"><a href="https://onorca.dev/download"><ins>Download Orca</ins></a></h3>
 
+For this fork's source build, isolated profile, and recovery launcher, see [Orca Local](docs/LOCAL-FORK.md).
+
 <p align="center">
   <img src="docs/assets/readme-hero.jpg" alt="Orca desktop app running agents in parallel worktrees, with the Orca mobile companion app in the corner" width="960" />
 </p>

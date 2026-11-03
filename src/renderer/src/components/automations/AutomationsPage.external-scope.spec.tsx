@@ -2,11 +2,12 @@
 
 /** Drive the page’s scope producer and inspect IPC; client tests with pre-narrowed scopes cannot verify which hosts the page asks. */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { AutomationOwnerRef } from '../../../../shared/automation-owner-ref'
 import {
   api,
   DESKTOP_SELF_OWNER,
+  enableExternalAutomationProviderFixture,
   installAutomationsPageHarness,
   mocks,
   renderPage,
@@ -60,6 +61,7 @@ function openclawOnly(): void {
 
 describe('AutomationsPage external manager probes', () => {
   installAutomationsPageHarness()
+  beforeEach(enableExternalAutomationProviderFixture)
 
   it('probes no SSH host when the selection is the local desktop', async () => {
     withSshHosts('staging', 'web-01', 'web-02')
@@ -113,6 +115,7 @@ describe('AutomationsPage external manager probes', () => {
     await settleHostQueries()
 
     expect(listedExternalEntries()).toEqual([])
+    expect(api.automations.listExternalManagerForOwner).not.toHaveBeenCalled()
   })
 
   it('drops the previous host rows when the selection moves, not when the new probe lands', async () => {
@@ -132,6 +135,13 @@ describe('AutomationsPage external manager probes', () => {
     await rerender()
     await settleHostQueries()
 
+    expect(api.automations.listExternalManagerForOwner).toHaveBeenLastCalledWith({
+      owner: {
+        authority: { kind: 'desktop' },
+        selector: { kind: 'ssh', targetId: 'staging', targetGeneration: 1 }
+      },
+      provider: 'openclaw'
+    })
     expect(listedExternalEntries()).toEqual([])
   })
 

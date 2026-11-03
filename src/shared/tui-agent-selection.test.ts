@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import {
+  filterEnabledTuiAgents,
   haveSameDisabledTuiAgents,
+  isTuiAgentEnabled,
   normalizeDisabledTuiAgents,
   pickTuiAgent
 } from './tui-agent-selection'
+import { isTuiAgent } from './tui-agent-config'
 
 describe('pickTuiAgent', () => {
+  it('keeps saved OpenClaw identifiers readable without selecting them', () => {
+    expect(isTuiAgent('openclaw')).toBe(true)
+    expect(pickTuiAgent('openclaw', ['openclaw', 'codex'])).toBe('codex')
+    expect(pickTuiAgent('openclaw', ['codex'], null, () => true)).toBe('codex')
+    expect(pickTuiAgent(null, ['openclaw'])).toBeNull()
+    expect(isTuiAgentEnabled('openclaw')).toBe(false)
+    expect(filterEnabledTuiAgents(['openclaw', 'codex'])).toEqual(['codex'])
+  })
+
   it('uses an installed preferred agent', () => {
     expect(pickTuiAgent('codex', ['claude', 'codex'])).toBe('codex')
   })

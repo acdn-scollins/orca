@@ -125,7 +125,9 @@ it('publishes at least one user or assistant message for every source it reads',
 
   // Check every storage source: one working OpenCode format must not mask another’s missing messages.
   expect(reads.filter((read) => !spokeIn(read)).map((read) => read.path)).toEqual([])
-  expect(new Set(reads.map((read) => read.agent))).toEqual(new Set(AI_VAULT_AGENTS))
+  expect(new Set(reads.map((read) => read.agent))).toEqual(
+    new Set(AI_VAULT_AGENTS.filter((agent) => agent !== 'openclaw'))
+  )
 })
 
 it('publishes an OpenCode SQLite session through the same channel as every file source', async () => {

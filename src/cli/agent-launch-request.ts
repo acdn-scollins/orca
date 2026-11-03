@@ -16,6 +16,7 @@ import { parseAgentSessionOperationTimestamp } from '../shared/agent-session-hos
 import type { RuntimeStatus } from '../shared/runtime-types'
 import type { TuiAgent } from '../shared/tui-agent'
 import { isTuiAgent } from '../shared/tui-agent-config'
+import { isTuiAgentEnabled } from '../shared/tui-agent-selection'
 import {
   getOptionalStringFlag,
   getRequiredStringFlag,
@@ -53,7 +54,7 @@ function readSurfaceFlag(flags: Flags): AgentLaunchSurface | undefined {
 }
 
 export function parseCliAgent(value: string): TuiAgent {
-  if (!isTuiAgent(value)) {
+  if (!isTuiAgent(value) || !isTuiAgentEnabled(value)) {
     throw new RuntimeClientError('invalid_argument', `Unknown TUI agent "${value}"`)
   }
   return value
