@@ -14,7 +14,7 @@ import {
   writeFile
 } from 'node:fs/promises'
 import path from 'node:path'
-import { backup, DatabaseSync } from 'node:sqlite'
+import { DatabaseSync } from 'node:sqlite'
 
 const require = createRequire(import.meta.url)
 const builtProfileState = path.resolve(
@@ -138,26 +138,19 @@ export function checkDatabase(file) {
 
 export async function snapshotDatabase(source, target) {
   await mkdir(path.dirname(target), { recursive: true, mode: 0o700 })
-  await writeFile(target, '', { flag: 'wx', mode: 0o600 })
-  const db = new DatabaseSync(source, { readOnly: true, timeout: 2000 })
+  const { default: Database } = require(
+    path.join(builtProfileState, '../../sqlite/sync-database.js')
+  )
+  const { writeProfileStateDatabaseSnapshotAsync } = require(
+    path.join(builtProfileState, 'profile-state-database-snapshot.js')
+  )
+  const db = new Database(source, { readonly: true, fileMustExist: true, timeout: 2000 })
   try {
-    await backup(db, target)
+    await writeProfileStateDatabaseSnapshotAsync(db, target, {
+      validateStagedSnapshot: checkDatabase
+    })
   } finally {
     db.close()
-  }
-  const standalone = new DatabaseSync(target)
-  try {
-    standalone.exec('PRAGMA journal_mode=DELETE')
-  } finally {
-    standalone.close()
-  }
-  checkDatabase(target)
-  await chmod(target, 0o600)
-  const handle = await open(target, 'r+')
-  try {
-    await handle.sync()
-  } finally {
-    await handle.close()
   }
 }
 

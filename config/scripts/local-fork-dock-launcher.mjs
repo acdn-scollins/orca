@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { quotePosixShell } from '../../src/shared/shell-argument-quoting.ts'
+import { quotePosixShell } from '../../src/shared/shell/launch/shell-argument-quoting.ts'
 
 export function createDockLaunchPlan({ repoRoot, nodeExecutable, profile, recovery }) {
   const launcher = path.join(repoRoot, 'config', 'scripts', 'launch-orca-local.mjs')

@@ -5,11 +5,12 @@ import {
   buildJiraCreateSubmission,
   hasJiraAssigneeCreateField
 } from '@/components/task-page/jira/task-page-jira-create-fields'
-import { jiraCreateIssue } from '@/runtime/runtime-jira-user-fields-client'
-import { jiraGetIssue } from '@/runtime/runtime-jira-client'
+import { jiraCreateIssue } from '@/runtime/jira/runtime-jira-user-fields-client'
+import { jiraGetIssue } from '@/runtime/jira/runtime-jira-client'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { defaultScopeSource } from '@/lib/default-creation-host'
+import { openAppHttpLink } from '@/lib/browser/navigation/app-http-link-open'
 export function useTaskPageJiraIssueCreation(model: TaskPageLinearIssueCreationModel) {
   const {
     settings,
@@ -82,7 +83,7 @@ export function useTaskPageJiraIssueCreation(model: TaskPageLinearIssueCreationM
           action: result.url
             ? {
                 label: translate('auto.components.TaskPage.9c57663908', 'View'),
-                onClick: () => window.open(result.url, '_blank')
+                onClick: () => openAppHttpLink(result.url)
               }
             : undefined
         }

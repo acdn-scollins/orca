@@ -5,7 +5,11 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, it, vi } from 'vitest'
 import { openProfileStateDatabase } from '../../src/main/persistence/profile-state/profile-state-database'
-import { importProfileStateJson } from '../../src/main/persistence/profile-state/profile-state-documents'
+import {
+  importProfileStateJson,
+  readProfileStateRevision
+} from '../../src/main/persistence/profile-state/profile-state-documents'
+import { writeProfileStateDomain } from '../../src/main/persistence/profile-state/profile-state-domain-writes'
 import { inspectProfile, profileStateAccess } from './local-fork-recovery-files.mjs'
 import {
   createRecoverySnapshot,
@@ -98,6 +102,54 @@ it('takes online SQLite snapshots including WAL data and only selected local Cod
   expect(inspectProfile(path.join(saved.directory, 'profile')).sessions).toBe(1)
   expect(inspectProfile(f.profile).sessions).toBe(2)
   expect(f.journal.prepare('PRAGMA journal_mode').get().journal_mode).toBe('wal')
+})
+
+it('refreshes split-domain compatibility rows in snapshots without changing live rows', async () => {
+  const f = await fixture()
+  for (const title of ['original', 'latest']) {
+    writeProfileStateDomain(f.settings.db, {
+      domain: 'worktreeMeta',
+      payload: JSON.stringify({ example: { title } }),
+      expectedRevision: readProfileStateRevision(f.settings.db)
+    })
+  }
+  const saved = await createRecoverySnapshot(f)
+  const snapshot = new DatabaseSync(
+    path.join(saved.directory, 'profile', 'profiles', 'local-default', 'profile-state.db'),
+    { readOnly: true }
+  )
+  const query = "SELECT payload FROM profile_state_documents WHERE domain = 'worktreeMeta'"
+  try {
+    expect(snapshot.prepare(query).get().payload).toBe('{"example":{"title":"latest"}}')
+    expect(f.settings.db.prepare(query).get().payload).toBe('{"example":{"title":"original"}}')
+  } finally {
+    snapshot.close()
+  }
+})
+
+it('preserves newer-schema live data instead of replacing it with an older generation', async () => {
+  const f = await fixture()
+  const saved = await createRecoverySnapshot(f)
+  f.close()
+  const file = path.join(f.profile, 'profiles', 'local-default', 'profile-state.db')
+  const database = new DatabaseSync(file)
+  try {
+    database.exec(
+      'PRAGMA user_version=2147483647; PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode=DELETE'
+    )
+  } finally {
+    database.close()
+  }
+  const reader = new DatabaseSync(file, { readOnly: true })
+  try {
+    expect(reader.prepare('PRAGMA user_version').get().user_version).toBe(2147483647)
+  } finally {
+    reader.close()
+  }
+  const before = await readFile(file)
+  await expect(recoverProfileIfNeeded(f)).rejects.toMatchObject({ code: 'newer-schema' })
+  expect(await readFile(file)).toEqual(before)
+  await validateGeneration(saved, f.profile)
 })
 
 it('restores a missing profile and transcript while preserving newer provider data', async () => {

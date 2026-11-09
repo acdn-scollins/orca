@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { spawnProcess } from '@orca/process-host'
-import { prepareDevCliTerminalWrappers } from './dev-cli-terminal-wrapper.mjs'
+import { prepareDevCliTerminalWrappers } from './development/launch/dev-cli-terminal-wrapper.mjs'
 import { createRecoverySnapshot, recoverProfileIfNeeded } from './local-fork-recovery.mjs'
 import { defaultForkProfile, defaultRecoveryRoot } from './local-fork-recovery-providers.mjs'
 

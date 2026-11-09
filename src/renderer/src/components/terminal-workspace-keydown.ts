@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { dispatchWorkspaceTabCommand } from '@/lib/workspace-tab-commands'
+import { dispatchWorkspaceTabCommand } from '@/lib/workspace/tabs/workspace-tab-commands'
 import type { KeybindingActionId } from '../../../shared/keybindings'
 import { keybindingMatchesAction } from '../../../shared/keybindings'
 import { matchesRecentTabSwitcherChord } from '../../../shared/window-shortcut-policy'
@@ -39,6 +39,7 @@ export function handleTerminalWorkspaceKeyDown(
     activeWorktreeId,
     handleCloseAllFiles,
     handleNewBrowserTab,
+    handleNewBrowserTabSplitRight,
     handleNewFile,
     handleNewSimulatorTab,
     handleNewTab,
@@ -50,7 +51,8 @@ export function handleTerminalWorkspaceKeyDown(
     return
   }
   const context = getKeybindingContext(event.target)
-  const floatingWorkspaceFocused = isFloatingWorkspacePanelFocused()
+  const floatingWorkspaceFocused =
+    isEventTargetInsideFloatingWorkspacePanel(event.target) || isFloatingWorkspacePanelFocused()
   const matchShortcut = (actionId: KeybindingActionId): boolean =>
     keybindingMatchesAction(actionId, event, shortcutPlatform, keybindings, {
       context,
@@ -66,26 +68,24 @@ export function handleTerminalWorkspaceKeyDown(
       keybindings
     })
   }
-  if (!event.repeat && matchShortcut('tab.newTerminal')) {
-    event.preventDefault()
-    notifyTerminalCapture('tab.newTerminal')
-    if (floatingWorkspaceFocused) {
-      void createFloatingWorkspaceTerminalTab(useAppStore.getState())
-      return
-    }
-    handleNewTab()
-    return
-  }
-
   if (!event.repeat) {
     const agentShortcut = resolveTerminalAgentTabShortcut({
       activeWorktreeId: floatingWorkspaceFocused ? FLOATING_TERMINAL_WORKTREE_ID : activeWorktreeId,
       keybindings,
-      matchShortcut
+      matchShortcut,
+      includeTerminal: true
     })
     if (agentShortcut.actionId) {
       event.preventDefault()
       notifyTerminalCapture(agentShortcut.actionId)
+      if (agentShortcut.actionId === 'tab.newTerminal') {
+        if (floatingWorkspaceFocused) {
+          void createFloatingWorkspaceTerminalTab(useAppStore.getState())
+        } else {
+          handleNewTab()
+        }
+        return
+      }
       if (floatingWorkspaceFocused) {
         // Why: this capture listener usually runs before the floating panel's own, so it routes there too.
         launchFloatingWorkspaceAgentShortcut(agentShortcut)
@@ -132,6 +132,17 @@ export function handleTerminalWorkspaceKeyDown(
       return
     }
     handleNewBrowserTab()
+    return
+  }
+  if (!event.repeat && matchShortcut('tab.newBrowserSplitRight')) {
+    event.preventDefault()
+    notifyTerminalCapture('tab.newBrowserSplitRight')
+    if (
+      !floatingWorkspaceFocused &&
+      ensureClientCreationActionAllowed(activeWorktreeId, 'managed-browser')
+    ) {
+      handleNewBrowserTabSplitRight()
+    }
     return
   }
   if (!event.repeat && mobileEmulatorEnabled && matchShortcut('tab.newSimulator')) {
@@ -221,7 +232,10 @@ export function handleTerminalWorkspaceKeyDown(
   }
   if (matchShortcut('tab.previousRecent')) {
     if (claimTabSwitch()) {
-      dispatchWorkspaceTabCommand({ type: 'previous-recent' })
+      dispatchWorkspaceTabCommand({
+        type: 'previous-recent',
+        floatingPanelOwned: floatingWorkspaceFocused
+      })
     }
     return
   }
@@ -251,7 +265,8 @@ export function handleTerminalWorkspaceKeyDown(
     dispatchWorkspaceTabCommand({
       type: 'switch',
       direction: switchAllTypesDirection ?? switchSameTypeDirection ?? 1,
-      scope: switchAllTypesDirection !== null ? 'all-types' : 'same-type'
+      scope: switchAllTypesDirection !== null ? 'all-types' : 'same-type',
+      floatingPanelOwned: floatingWorkspaceFocused
     })
   }
   const terminalTabDirection = matchShortcut('tab.nextTerminal')
@@ -263,7 +278,8 @@ export function handleTerminalWorkspaceKeyDown(
     dispatchWorkspaceTabCommand({
       type: 'switch',
       direction: terminalTabDirection,
-      scope: 'terminal'
+      scope: 'terminal',
+      floatingPanelOwned: floatingWorkspaceFocused
     })
   }
 }

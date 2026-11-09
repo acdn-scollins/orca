@@ -1,5 +1,5 @@
-import type { TuiAgent } from './tui-agent'
-import { isTuiAgentEnabled } from './tui-agent-selection'
+import type { TuiAgent } from './agent-launch/catalog/tui-agent'
+import { isTuiAgentEnabled } from './agent-launch/catalog/tui-agent-selection'
 
 /** Null segments use canonical .agents/skills without a separate placement; IDs match detected Orca agents. */
 type SkillInstallProviderEntry = {

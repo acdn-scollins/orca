@@ -1,7 +1,7 @@
 import {
   createClaudeStructuredLaunchResolver,
   createCodexStructuredLaunchResolver
-} from '../runtime/structured-agent-launch-composition.test-support'
+} from '../runtime/agent-session/launch/structured-agent-launch-composition.test-support'
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,7 +13,7 @@ import {
   adapterFor,
   fakeCodex,
   identityFor
-} from '../codex/codex-structured-session-adapter-fixture'
+} from '../codex/structured/session-lifecycle/codex-structured-session-adapter-fixture'
 import { agentSessionRecordFixture } from './agent-session-record-test-fixture'
 import {
   createNativeChatVisualsDelivery,
@@ -50,7 +50,7 @@ describe('inline visuals launch preference', () => {
     const launch = await createClaudeStructuredLaunchResolver({
       store: { getRecord: () => record, pinLaunchDirectory: vi.fn() },
       resolveWorkspacePath: async () => '/repo',
-      resolveCommand: () => '/bin/claude',
+      resolveCommand: () => ({ command: '/bin/claude', prefixArgs: [] }),
       resolveAuthPolicy: () => ({ account: 'system' }),
       resolveLaunchArgs: () => ['--add-dir', '/user/notes', '--plugin-dir', '/user/plugin'],
       resolveEnv: () => ({ [NATIVE_CHAT_SCRATCH_DIR_ENV]: '/inherited', KEEP: 'yes' }),
@@ -91,7 +91,7 @@ describe('inline visuals launch preference', () => {
         pinLaunchDirectory: vi.fn()
       },
       resolveWorkspacePath: async () => '/repo',
-      resolveCommand: () => '/bin/codex',
+      resolveCommand: () => ({ command: '/bin/codex', prefixArgs: [] }),
       resolveLaunchArgs: () => [],
       resolveEnvironment: async () => ({
         [NATIVE_CHAT_SCRATCH_DIR_ENV]: '/inherited',

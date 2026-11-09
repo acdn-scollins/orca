@@ -1,4 +1,4 @@
-import type { ExternalAutomationActionInput } from '../../shared/automations-types'
+import type { ExternalAutomationActionInput } from '../../shared/automations/external/external-automation'
 import {
   EXTERNAL_AUTOMATION_SCOPE_CODES,
   ExternalAutomationScopeError
