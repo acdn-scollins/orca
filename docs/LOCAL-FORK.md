@@ -2,6 +2,8 @@
 
 This fork follows the behavior described by [sglanzer/orca's local fork guide](https://github.com/sglanzer/orca/blob/427763d/LOCAL-FORK.md). The installed local build integrates original Orca `v1.4.255`, commit `084ce0eebbdda3f665251984804f2238be666296`, over our previous original-upstream base `641e4792b966960d65bd82a3744fe087a5ac05cb`. See the completed cutover record below for qualification and remaining limits. The colleague's `v1.4.224` fork is a historical reference; use this checkout's commands and recovery implementation.
 
+`oc-clean-local-build` is the single maintained product branch and the fork's GitHub default. Build and run from the permanent checkout at `/Users/scolnz/accedian/git/orca`. Upstream-update branches are temporary candidates; retire them after promotion and first-use validation.
+
 OpenClaw session discovery, state-directory environment forwarding, automation discovery and commands, and selectable agent entries are removed. Persisted identifiers and transcript parsers remain readable for compatibility. Other supported agents and Orca's own automations remain supported. Endpoint protection settings are unchanged.
 
 ## Build and run from source
@@ -163,7 +165,7 @@ Each completed update should record the previous fork tip, merged upstream SHA, 
 
 ## Update record: November 9, 2026
 
-Status: the qualified local update is installed at the permanent checkout. Qualification used the documented scoped-test allowance; the complete 4,008-file selection is not claimed green. The configured profile was preserved in place and was not started by the agent after cutover; normal first launch and authenticated provider use remain user checks.
+Status: the qualified local update is installed at the permanent checkout. Qualification used the documented scoped-test allowance; the complete 4,008-file selection is not claimed green. The configured profile was preserved in place. User startup and a Codex conversation subsequently passed the first-use check recorded below.
 
 - Previous fork tip: `904699a6eafe4db4d26f7bcc47ee3d6603b614fd`.
 - Selected original upstream: `v1.4.255`, `084ce0eebbdda3f665251984804f2238be666296`.
@@ -353,6 +355,12 @@ All documented builds were then repeated at **`/Users/scolnz/accedian/git/orca`*
 
 Per-step logs are in the candidate's `.tmp/cutover-20261109/permanent-*.log`; commands are captured in `rebuild-permanent.zsh`. The private `permanent-build-receipt.json` and `checkpoint.json` preserve the completed state. The compiled code is from `0cab5ca5`; the final cutover-record commit changes documentation only, so it needs no application rebuild. Run the required incremental `check:changed --base=0cab5ca5599b75a9c29213c5cda1a97b958bdb06 --maxWorkers=2` after that documentation edit and immediately before publishing both fork branches.
 
-Released only the session's recorded maintenance process after builds/CLI verification. Rehashed all **253 live profile files** after lease release: contents, sizes, modes, and file set still matched the pre-update manifest. Installed launcher metadata also matched its saved hash. The launcher remains `/Users/scolnz/Applications/Orca Local Launcher.app`, pointing to the same permanent checkout, Node executable, `orca-local` profile, and normal recovery root. It did not need reinstalling. The user can reopen that existing launcher normally; the agent did not start or migrate the live profile through Electron. First live startup/default normalization, credential decryption, and a short authenticated agent conversation remain separate user checks. Keep the private rollback capsule until those pass.
+Released only the session's recorded maintenance process after builds/CLI verification. Rehashed all **253 live profile files** after lease release: contents, sizes, modes, and file set still matched the pre-update manifest. Installed launcher metadata also matched its saved hash. The launcher remains `/Users/scolnz/Applications/Orca Local Launcher.app`, pointing to the same permanent checkout, Node executable, `orca-local` profile, and normal recovery root. It did not need reinstalling. The agent did not start or migrate the live profile through Electron during cutover; subsequent user startup and agent use are recorded below. Keep the private rollback capsule while the remaining first-use checks are outstanding.
 
 For rollback, fully Quit Orca, preserve any post-update profile separately, and restore the matching old code/output/dependencies/runtime plus `closed-profile/` at the original profile path. Use the recorded old commit in a clean checkout without rewriting the published fork branch; do not apply old data over a running app or assume schema3 alone makes source-only rollback safe. The pinned recovery manifest is original-path-bound and complements the full archive. No remote host, physical mobile device, native-focus benchmark, or universal distributable was qualified by this local cutover; upstream's two incomplete/failing E2E shards remain as recorded above.
+
+## First use and branch consolidation: November 9, 2026
+
+The user confirmed successful application startup. A Codex conversation received the prompt and repository instructions, executed shell tools, and completed a native helper-agent round trip. The profile's dev CLI reported `1.4.255` and reached the running Orca runtime to resolve this exact candidate worktree and commit. This validates the exercised Codex integration; quit/reopen conversation persistence, recovery after first use, other providers, and remote/mobile workflows remain separate checks.
+
+Both `oc-clean-local-build` and `codex/upstream-v1.4.255`, locally and on GitHub, already pointed at `7e055b526b9442ff6e955102406b3b2ada9f020e`; promotion required no further merge. The redundant candidate branch was retired in favor of `oc-clean-local-build`. The active candidate worktree is retained with a detached HEAD to preserve this conversation and its ignored `.tmp` validation records. No application rebuild is needed for this documentation-only consolidation.
