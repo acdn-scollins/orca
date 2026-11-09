@@ -29,11 +29,12 @@ node config/scripts/cli-build/verify-cli-bin.mjs --fix-executable --fix-package-
 pnpm run build:electron-vite
 pnpm run build:web-from-renderer
 pnpm run build:mobile-web
+pnpm run build:native --single-arch
 pnpm run ensure:electron-runtime
 node config/scripts/launch-orca-local.mjs
 ```
 
-The direct CLI compile and verification avoid `build:cli`'s optional global `/usr/local/bin/orca-dev` registration. Current sources use `build:wsl-guest`; they do not have the reference fork's retired `build:relay` command. The launcher uses built files without a development server. This is an unpackaged development app; its desktop updater is disabled by the existing development-build gate. Packaging a distributable `.app`, DMG, or installer is a separate task.
+The direct CLI compile and verification avoid `build:cli`'s optional global `/usr/local/bin/orca-dev` registration. Current sources use `build:wsl-guest`; they do not have the reference fork's retired `build:relay` command. `build:native --single-arch` builds the local Mac's helper architecture; other platforms retain their existing native build paths. Omit the flag for universal macOS helpers when preparing distributables with a suitable cross-compilation toolchain. The launcher uses built files without a development server. This is an unpackaged development app; its desktop updater is disabled by the existing development-build gate. Packaging a distributable `.app`, DMG, or installer is a separate task.
 
 The launcher keeps its Node supervisor alive until Electron exits. Agent validation must set `ORCA_BACKGROUND_LAUNCH=1`; rendered checks use the Electron skill and Playwright CDP with hidden windows.
 
@@ -318,3 +319,19 @@ All **34 non-unit checks** therefore pass when including that corrected ratchet 
 The subsequent correction commit contains only the ratchet allowance and this qualification record. Run `pnpm check:changed --base=8bd6ce8f9dfadafb3391a17ce562a00009206654 --maxWorkers=2` immediately before publishing that stack. This is incremental correction evidence; it supplements the full custom-delta static checks and scoped tests above. It does not establish a green 4,008-file suite. Never use `--no-verify`.
 
 The permanent checkout, installed launcher, and configured `orca-local` profile have not been advanced or migrated. Pre-cutover read-only inspection found the old app actively owning its databases; the user must Quit Orca before full closed-profile preservation. Retain the old source, dependency trees, ignored workspace-package dist outputs, Electron output/runtime, launcher, and Node binary as well as the complete profile and a verified recovery generation. A live profile copy is not the rollback archive.
+
+### Local native helpers and closed-profile preservation
+
+The default universal `pnpm run build:native` exposed a host-toolchain limitation: this Apple Silicon CommandLineTools installation's `libswiftCompatibilityConcurrency.a` contains arm64/arm64e but no x86_64. The unmodified upstream process-footprint helper could not link its Intel target; the build correctly failed and cancelled sibling compiler groups. This is separate from the fork's test failures. No global Xcode selection, SDK, or signing identity was changed.
+
+Three upstream Swift CLI helper builders already support `--single-arch`. Added the same host-triple selection to `build-computer-macos.mjs` and forwarding of only that recognized flag through the macOS branch of `build-native-for-platform.mjs`. The no-flag path still builds both architectures; Windows/Linux early-return paths and signing/bundle identity remain unchanged. Independent read-only review, formatting, lint, syntax, and diff checks passed. `ORCA_COMPUTER_MACOS_SIGN_IDENTITY=- pnpm run build:native --single-arch` then passed all four helper builds; the computer-helper app passed `codesign --verify --deep --strict`. This compiles and signs helpers without launching them or requesting OS permissions. Universal packaging remains unqualified on this host. Swift reported upstream deprecations for `CGWindowListCreateImage` and `--build-system native`; neither was changed as part of this update.
+
+The user confirmed Quit Orca. Rechecked all recorded old app/supervisor/helper PIDs, the full profile's open-file ownership, and UNIX socket ownership: none remained. The private preservation root is:
+
+`/Users/scolnz/Documents/Codex/Orca Recovery/pre-v1.4.255-20261109T151417Z`
+
+The original `904699a6` recovery implementation created a separate pinned generation there, outside rolling retention. Its verification passed for 33 files, including two selected provider files; the manifest remains bound to the original `orca-local` path. `profile-closed.tar` and `closed-profile/` preserve all **253 regular files / 43,701,596 bytes**, with 97 directories and no symlinks at closure. Every archive member was read back and SHA-256 checked, the independent closed copy matched, and the original profile matched before/after. One `daemon/daemon-v54.sock` entry was omitted as transient IPC only after `lsof -U` found no owner and a connection was refused; no persistent files were excluded or removed. Full manifest, archive digest, and receipts are private in that directory.
+
+An additional offline rehearsal copied only 11 profile-index/SQLite/sidecar/authority files into `migration-probe/profile`, with an isolated HOME/environment. The old and candidate persistence APIs operated only on that private copy. Schema3 remained schema3; both split-storage tables appeared; SQLite integrity passed before/after. All 35 logical domains retained identical canonical hashes and counts, including settings and project/repository data; no domains changed or were added. The two history databases and four sidecars remained byte-identical. All 253 regular files in both the live profile and closed copy were rehashed before/after and still matched the archive manifest. No provider home, decryption, network action, automation, or Electron startup occurred in this actual-data probe. First live startup/default normalization and authenticated provider use remain distinct checks.
+
+Private receipts: `profile-backup-receipt.json`, `profile-file-manifest.json`, `recovery-receipt.json`, and `migration-probe/offline-migration-receipt.json`. The cutover checkpoint is also mirrored in the candidate's `.tmp/cutover-20261109/state.json`. Old source/build/dependency preservation is undergoing its final complete hash/symlink verification; do not advance the permanent checkout until its verified receipt exists.

@@ -19,6 +19,7 @@ if (process.platform !== 'darwin') {
   process.exit(0)
 }
 
+const buildArgs = process.argv.includes('--single-arch') ? ['--single-arch'] : []
 // Each compiler tree needs its own group so cancellation reaches Swift descendants.
 const children = new Map()
 let externalSignal = null
@@ -107,7 +108,7 @@ function runPnpmScript(scriptName) {
   }
   const label = scriptName.replace(/^build:|-macos$/g, '')
   const { command, prefixArgs, shell } = resolvePnpmCliInvocation()
-  const child = spawn(command, [...prefixArgs, 'run', scriptName], {
+  const child = spawn(command, [...prefixArgs, 'run', scriptName, ...buildArgs], {
     detached: true,
     shell,
     stdio: ['ignore', 'pipe', 'pipe']

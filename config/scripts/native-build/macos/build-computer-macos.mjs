@@ -17,18 +17,20 @@ const entitlementsPath = path.join(
 const bundleId = process.env.ORCA_COMPUTER_MACOS_BUNDLE_ID ?? 'com.stablyai.orca.computer-use'
 const displayName = 'Orca Computer Use'
 const signingIdentity = resolveSigningIdentity()
-const universalTriples = ['arm64-apple-macosx', 'x86_64-apple-macosx']
+const targetTriples = process.argv.includes('--single-arch')
+  ? [process.arch === 'arm64' ? 'arm64-apple-macosx' : 'x86_64-apple-macosx']
+  : ['arm64-apple-macosx', 'x86_64-apple-macosx']
 
 if (process.platform !== 'darwin') {
   process.exit(0)
 }
 
-buildUniversalBinary()
+buildBinary()
 chmodSync(binaryPath, 0o755)
 createHelperApp()
 
-function buildUniversalBinary() {
-  const builtBinaries = universalTriples.map((triple) => {
+function buildBinary() {
+  const builtBinaries = targetTriples.map((triple) => {
     // SwiftPM 6.4+ swiftbuild default skips the .build/<triple>/release layout lipo reads (#21145)
     run('swift', [
       'build',
