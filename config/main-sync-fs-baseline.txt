@@ -25,7 +25,6 @@
 3 src/main/antigravity/native-file-credentials.ts
 3 src/main/artifacts/artifact-create-intent-store.ts
 2 src/main/artifacts/artifact-share-record-store.ts
-1 src/main/automations/external-managers/external-manager-discovery.ts
 2 src/main/bots/bot-access-request-watch.ts
 1 src/main/bots/bot-look-around-store.ts
 3 src/main/bots/bot-tool-credentials.ts

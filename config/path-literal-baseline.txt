@@ -18,3 +18,11 @@ tests/e2e/terminal/performance/capture-opencode-tui-repro.mjs src/cli/cmd/tui/ui
 # Released source trees retain this actual registry; the current registry is checked first.
 tests/e2e/cross-version-wire/release-checkouts/release-module-locations.ts src/main/runtime/rpc/methods/index.ts
 tests/e2e/cross-version-wire/release-checkouts/release-module-locations.ts src/renderer/src/runtime/remote-runtime-terminal-multiplexer.ts
+
+# The fork rehearsal reads real v1.4.255 source paths before current moved owners.
+config/scripts/local-fork-profile-rehearsal.mjs src/main/persistence/profile-state/profile-state-access.ts
+config/scripts/local-fork-profile-rehearsal.mjs src/main/persistence/profile-state/profile-state-database.ts
+config/scripts/local-fork-profile-rehearsal.mjs src/main/persistence/profile-state/profile-state-documents.ts
+config/scripts/local-fork-profile-rehearsal.mjs src/shared/constants.ts
+config/scripts/local-fork-profile-rehearsal.mjs src/shared/orca-profiles.ts
+config/scripts/local-fork-profile-rehearsal.mjs src/shared/project-host-setup-projection.ts

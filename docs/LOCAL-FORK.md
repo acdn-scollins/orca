@@ -16,6 +16,8 @@ For `v1.4.273`, the pins are Node 24, pnpm 12.18.0, Bun 1.4.4, and Electron 43.8
 npm install --prefix .tmp/fork-tools --no-save --package-lock=false --ignore-scripts pnpm@12.18.0
 export PATH="$PWD/.tmp/fork-tools/node_modules/.bin:$PATH"
 export ORCA_PNPM_GLOBAL_VIRTUAL_STORE=0
+export pnpm_config_store_dir="$PWD/.tmp/pnpm-store"
+export pnpm_config_verify_deps_before_run=error
 node --version
 pnpm --version
 ```
@@ -106,6 +108,8 @@ Run the recovery checks against disposable synthetic data after building:
 ORCA_BACKGROUND_LAUNCH=1 pnpm test config/scripts/local-fork-recovery.test.mjs --maxWorkers=2
 ORCA_BACKGROUND_LAUNCH=1 pnpm check:changed --maxWorkers=2
 ```
+
+Run the fork policy check with `ORCA_BACKGROUND_LAUNCH=1 pnpm exec bun config/scripts/local-fork-openclaw-check.mjs`. It exercises active OpenClaw refusal while keeping supported agents and legacy metadata.
 
 The checks cover online WAL snapshots, missing-data restoration, fallback from damaged copies, admission/maintenance exclusion, intentionally empty profiles, path containment, retention, and supervisor retries/final snapshots.
 
