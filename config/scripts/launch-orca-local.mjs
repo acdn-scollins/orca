@@ -68,7 +68,7 @@ export async function launchLocalFork(args = process.argv.slice(2)) {
     'out/main/index.js',
     'out/renderer/index.html',
     'out/cli/index.js',
-    'out/main/persistence/profile-state/profile-state-access.js'
+    'out/main/persistence/profile-state/access/profile-state-access.js'
   ]) {
     if (!existsSync(path.join(root, entry))) {
       throw new Error(`Build the local fork first: missing ${entry}`)

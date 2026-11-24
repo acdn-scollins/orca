@@ -4,11 +4,10 @@ import {
 } from './windows-native-hook-executable'
 
 import type { HookCommandConfig, HookDefinition } from '../configuration/hook-config-schema'
+import { isPlainObject } from '../configuration/hooks-json-read'
 
 // Match script names so reinstalls sweep entries from old and parallel installations.
-export function createManagedCommandMatcher(
-  scriptFileName: string
-): (command: string | undefined) => boolean {
+export function createManagedCommandMatcher(scriptFileName: string): (command: unknown) => boolean {
   const scriptStem = scriptFileName.replace(/\.(?:cmd|ps1|sh)$/, '')
   // Sweep every platform suffix after a platform switch.
   const needles = [
@@ -19,8 +18,9 @@ export function createManagedCommandMatcher(
   ]
   // The native executable selects its provider through argv[1].
   const nativeHook = `agent-hooks/${WINDOWS_NATIVE_HOOK_EXECUTABLE_NAME} ${getWindowsNativeHookAgent(scriptFileName)} `
+  // hooks.json is user-editable, so a command may not be a string.
   return (command) => {
-    if (!command) {
+    if (typeof command !== 'string' || !command) {
       return false
     }
     const decodedCommand = decodePowerShellEncodedCommand(command)
@@ -50,6 +50,10 @@ export function removeManagedCommands(
   isManagedCommand: (command: string | undefined) => boolean
 ): HookDefinition[] {
   return definitions.flatMap((definition) => {
+    // hooks.json is user-editable, so an entry may not be an object; keep it untouched.
+    if (!isPlainObject(definition)) {
+      return [definition]
+    }
     const directCommandKeys = ['command', 'bash', 'powershell'] as const
     const directManagedKeys = directCommandKeys.filter((key) => isManagedCommand(definition[key]))
     const hasNestedHooks = Array.isArray(definition.hooks)
@@ -89,6 +93,9 @@ export function removeManagedCommands(
 }
 
 function hookHasManagedCommand(hook: HookCommandConfig, matches: (value?: string) => boolean) {
+  if (!isPlainObject(hook)) {
+    return false
+  }
   const args = Array.isArray(hook.args) ? hook.args : []
   return matches(hook.command) || args.some((arg) => typeof arg === 'string' && matches(arg))
 }
@@ -110,10 +117,11 @@ export function hookDefinitionHasManagedCommand(
   isManagedCommand: (command: string | undefined) => boolean
 ): boolean {
   return (
-    isManagedCommand(definition.command) ||
-    isManagedCommand(definition.bash) ||
-    isManagedCommand(definition.powershell) ||
-    (Array.isArray(definition.hooks) &&
-      definition.hooks.some((hook) => hookHasManagedCommand(hook, isManagedCommand)))
+    isPlainObject(definition) &&
+    (isManagedCommand(definition.command) ||
+      isManagedCommand(definition.bash) ||
+      isManagedCommand(definition.powershell) ||
+      (Array.isArray(definition.hooks) &&
+        definition.hooks.some((hook) => hookHasManagedCommand(hook, isManagedCommand))))
   )
 }

@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { homedir } from 'node:os'
-import { existsSync } from 'node:fs'
-import { access } from 'node:fs/promises'
-import { queryDatabase, walkFiles, within } from './local-fork-recovery-files.mjs'
+import { access, realpath } from 'node:fs/promises'
+import { chatJournalFile, queryDatabase, walkFiles, within } from './local-fork-recovery-files.mjs'
 
 export function defaultForkProfile(
   env = process.env,
@@ -27,10 +26,11 @@ export function defaultRecoveryRoot(profile) {
 }
 
 export async function providerFiles(profile, home = homedir()) {
-  if (!existsSync(path.join(profile, 'agent-session-journal.db'))) {
+  const journal = chatJournalFile(profile)
+  if (!journal) {
     return []
   }
-  const records = queryDatabase(path.join(profile, 'agent-session-journal.db'), (db) =>
+  const records = queryDatabase(journal, (db) =>
     db
       .prepare('SELECT record_json FROM agent_session_records')
       .all()
@@ -62,20 +62,34 @@ export async function providerFiles(profile, home = homedir()) {
     }
   }
   const files = []
+  const seen = new Set()
+  const canonicalHome = await realpath(home)
   let homeIndex = 0
   for (const root of homes) {
     const label = `codex-${homeIndex++}`
     for (const folder of ['sessions', 'archived_sessions']) {
-      for await (const relative of walkFiles(path.join(root, folder))) {
-        if (!relative.endsWith('.jsonl')) {
+      const directory = await realpath(path.join(root, folder)).catch((error) => {
+        if (error.code !== 'ENOENT') {
+          throw error
+        }
+        return null
+      })
+      if (!directory) {
+        continue
+      }
+      within(canonicalHome, path.relative(canonicalHome, directory))
+      for await (const relative of walkFiles(directory)) {
+        if (!/\.jsonl(?:\.zst)?$/.test(relative)) {
           continue
         }
         const id = path
           .basename(relative)
           .match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
-        if (id && threadIds.has(id)) {
+        const source = path.join(home, path.relative(canonicalHome, directory), relative)
+        if (id && threadIds.has(id) && !seen.has(source)) {
+          seen.add(source)
           files.push({
-            source: path.join(root, folder, relative),
+            source,
             relative: path.join('providers', label, folder, relative),
             restoreRoot: root
           })

@@ -21,7 +21,26 @@ process.umask(0o077)
 assert.equal(process.env.ORCA_BACKGROUND_LAUNCH, '1')
 const candidateRoot = path.resolve(import.meta.dirname, '../..')
 const receiptFile = path.join(candidateRoot, '.tmp', 'synthetic-profile-rehearsal.json')
-const load = (root, file) => import(pathToFileURL(path.join(root, file)).href)
+const movedSources = {
+  'src/shared/constants.ts': 'src/shared/orca-profiles/constants.ts',
+  'src/shared/orca-profiles.ts': 'src/shared/orca-profiles/orca-profiles.ts',
+  'src/shared/project-host-setup-projection.ts':
+    'src/shared/project/host-setup/project-host-setup-projection.ts',
+  'src/main/persistence/profile-state/profile-state-database.ts':
+    'src/main/persistence/profile-state/database/profile-state-database.ts',
+  'src/main/persistence/profile-state/profile-state-documents.ts':
+    'src/main/persistence/profile-state/documents/profile-state-documents.ts',
+  'src/main/persistence/profile-state/profile-state-access.ts':
+    'src/main/persistence/profile-state/access/profile-state-access.ts',
+  'tests/e2e/helpers/electron-home-isolation.ts':
+    'tests/e2e/desktop/electron-fixtures/electron-home-isolation.ts'
+}
+const load = (root, file) =>
+  import(
+    pathToFileURL(
+      path.join(root, existsSync(path.join(root, file)) ? file : (movedSources[file] ?? file))
+    ).href
+  )
 const writeJson = (file, value) =>
   writeFileSync(file, JSON.stringify(value, null, 2), { mode: 0o600 })
 const databaseFile = (profile) =>
@@ -206,7 +225,7 @@ if (command === 'prepare') {
   try {
     importProfileStateJson(opened.db, JSON.stringify(state))
     assert.equal(opened.db.pragma('user_version', { simple: true }), 3)
-    assert.equal(
+    assert.notEqual(
       opened.db
         .prepare("SELECT name FROM sqlite_master WHERE name='profile_state_document_parts'")
         .get(),
@@ -256,13 +275,13 @@ if (command === 'prepare') {
   }
   mkdirSync(path.dirname(receiptFile), { recursive: true, mode: 0o700 })
   writeJson(receiptFile, receipt)
-  await verifyProfile(oldRoot, rollback, 'dark', false)
+  await verifyProfile(oldRoot, rollback, 'dark', true)
   assert.deepEqual(profileDigests(original), receipt.originalDigests)
   console.log(
     JSON.stringify({
       prepared: true,
       oldSchema: 3,
-      oldParts: false,
+      oldParts: true,
       oldCodeReadback: true,
       receiptFile,
       ...receipt
@@ -271,7 +290,7 @@ if (command === 'prepare') {
 } else if (command === 'old') {
   const receipt = readReceipt()
   assert.equal(oldSourceCommit(receipt.oldRoot), receipt.oldCommit)
-  await verifyProfile(receipt.oldRoot, receipt.rollback, 'dark', false)
+  await verifyProfile(receipt.oldRoot, receipt.rollback, 'dark', true)
   assert.deepEqual(profileDigests(receipt.original), receipt.originalDigests)
   console.log(JSON.stringify({ oldCodeReadback: true, untouchedOriginal: true }))
 } else if (command === 'candidate') {

@@ -1,15 +1,13 @@
 import { EventEmitter } from 'node:events'
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, it, vi } from 'vitest'
-import { openProfileStateDatabase } from '../../src/main/persistence/profile-state/profile-state-database'
-import {
-  importProfileStateJson,
-  readProfileStateRevision
-} from '../../src/main/persistence/profile-state/profile-state-documents'
-import { writeProfileStateDomain } from '../../src/main/persistence/profile-state/profile-state-domain-writes'
+import { openProfileStateDatabase } from '../../src/main/persistence/profile-state/database/profile-state-database'
+import { importProfileStateJson } from '../../src/main/persistence/profile-state/documents/profile-state-documents'
+import { readProfileStateRevision } from '../../src/main/persistence/profile-state/database/profile-state-revision'
+import { writeProfileStateDomain } from '../../src/main/persistence/profile-state/documents/profile-state-domain-writes'
 import { inspectProfile, profileStateAccess } from './local-fork-recovery-files.mjs'
 import {
   createRecoverySnapshot,
@@ -102,6 +100,55 @@ it('takes online SQLite snapshots including WAL data and only selected local Cod
   expect(inspectProfile(path.join(saved.directory, 'profile')).sessions).toBe(1)
   expect(inspectProfile(f.profile).sessions).toBe(2)
   expect(f.journal.prepare('PRAGMA journal_mode').get().journal_mode).toBe('wal')
+})
+
+it('recovers canonical chat storage and attachments after the legacy journal retires', async () => {
+  const f = await fixture()
+  const canonical = path.join(f.profile, 'agent-session-domain.db')
+  const domain = new DatabaseSync(canonical)
+  domain.exec('CREATE TABLE agent_session_records(session_id TEXT, record_json TEXT)')
+  domain.prepare('INSERT INTO agent_session_records VALUES (?, ?)').run('new-chat', '{}')
+  domain.prepare('INSERT INTO agent_session_records VALUES (?, ?)').run('another-chat', '{}')
+  domain.close()
+  const attachment = path.join(f.profile, 'chat-scratch', 'example', 'saved.txt')
+  await mkdir(path.dirname(attachment), { recursive: true })
+  await writeFile(attachment, 'saved chat attachment')
+  const saved = await createRecoverySnapshot(f)
+  f.close()
+  await rm(path.join(f.profile, 'agent-session-journal.db'))
+  expect((await recoverProfileIfNeeded(f)).recovered).toBe(false)
+  await rm(canonical)
+  await rm(attachment)
+  expect((await recoverProfileIfNeeded(f)).recovered).toBe(true)
+  expect(inspectProfile(f.profile).sessions).toBe(2)
+  expect(await readFile(attachment, 'utf8')).toBe('saved chat attachment')
+  await validateGeneration(saved, f.profile)
+})
+
+it('restores compressed Codex history to its canonical store without following account links', async () => {
+  const f = await fixture()
+  const compressed = `${f.codex}.zst`
+  await rename(f.codex, compressed)
+  await writeFile(compressed, 'saved compressed rollout bytes')
+  const account = path.join(f.profile, 'codex-accounts', 'linked', 'home')
+  await mkdir(account, { recursive: true })
+  await symlink(path.join(f.home, '.codex', 'sessions'), path.join(account, 'sessions'), 'dir')
+  f.journal.prepare('INSERT INTO agent_session_records VALUES (?, ?)').run(
+    'linked-chat',
+    JSON.stringify({
+      provider: 'codex',
+      location: { executionHostId: 'local' },
+      accountHome: { variable: 'CODEX_HOME', path: account },
+      providerHandleChain: [{ handle: { threadId: THREAD } }]
+    })
+  )
+  const saved = await createRecoverySnapshot(f)
+  expect(saved.manifest.providers.map((entry) => entry.target)).toEqual([compressed])
+  f.close()
+  await rm(f.profile, { recursive: true })
+  await rm(compressed)
+  expect((await recoverProfileIfNeeded(f)).restoredProviderFiles).toBe(1)
+  expect(await readFile(compressed, 'utf8')).toBe('saved compressed rollout bytes')
 })
 
 it('refreshes split-domain compatibility rows in snapshots without changing live rows', async () => {

@@ -266,7 +266,19 @@ export async function recoverProfileIfNeeded({ profile, recovery, home = homedir
     try {
       inspectProfile(profile)
       const newest = items[0]?.manifest
-      for (const entry of ['agent-session-journal.db', 'orchestration.db']) {
+      for (const entry of [
+        'agent-session-domain.db',
+        'agent-session-journal.db',
+        'orchestration.db',
+        'bot-items.sqlite',
+        'bot-work.sqlite'
+      ]) {
+        if (
+          entry === 'agent-session-journal.db' &&
+          (await exists(path.join(profile, 'agent-session-domain.db')))
+        ) {
+          continue
+        }
         if (
           newest?.files[path.join('profile', entry)] &&
           !(await exists(path.join(profile, entry)))

@@ -1,98 +1,100 @@
 // @vitest-environment happy-dom
-
 import '@testing-library/jest-dom/vitest'
-
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { Profiler } from 'react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-
+import { TooltipProvider } from '@/components/ui/tooltip'
+import type { WorkerDockRowView } from './dock/WorkerDockRow'
 import { NativeChatBackgroundTasksStatus } from './NativeChatBackgroundTasksStatus'
 
-afterEach(() => {
-  cleanup()
-  vi.useRealTimers()
-})
-
-/** Own disclosure outside the strip so temporary roster gaps cannot reset expansion. */
-
-it('lets the 1 Hz tick sleep while every row has settled, with each run frozen', () => {
-  vi.useFakeTimers()
-  vi.setSystemTime(1_000_000)
-  const committed = vi.fn()
-  const finished = (id: string, firstObservedAt: number, settledAt: number) => ({
-    id,
-    providerId: `task-${id}`,
-    kind: 'agent' as const,
-    description: `child ${id}`,
-    state: 'done' as const,
-    membership: 'settled' as const,
-    outcome: 'succeeded' as const,
-    firstObservedAt,
-    observedAt: settledAt,
-    settledAt,
-    stoppable: false,
-    invocation: { invocationId: `spawn-${id}`, generation: 1 }
-  })
+afterEach(cleanup)
+it('opens a command through its command route and retains capability-gated untargeted Stop', () => {
+  const stop = vi.fn()
+  const command = vi.fn()
+  const agent = vi.fn()
   render(
-    <Profiler id="strip" onRender={committed}>
+    <TooltipProvider>
       <NativeChatBackgroundTasksStatus
+        tasks={[
+          { id: 'shell-7', kind: 'command', description: 'Verify the journal', state: 'working' }
+        ]}
+        settledTasks={[]}
+        supportsTaskStop={false}
+        offersStopAll
+        incomplete
+        stoppingTaskIds={new Set()}
+        stoppingAll={false}
+        indicatorActive
+        isVisible
         expanded
         onExpandedChange={() => {}}
-        isVisible
+        onStop={stop}
+        onShowProviderDetails={command}
+        onShowAgent={agent}
+      />
+    </TooltipProvider>
+  )
+  const opener = within(screen.getByRole('region', { name: 'Workers' })).getAllByRole('button')[0]
+  fireEvent.click(opener)
+  expect(command).toHaveBeenCalledWith(
+    expect.objectContaining({ kind: 'command', providerId: 'shell-7' }),
+    opener
+  )
+  expect(agent).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: /^Stop$/ }))
+  expect(stop).toHaveBeenCalledWith()
+})
+
+it('opens captured invocation details for a retained provider failure', () => {
+  const details = vi.fn()
+  const agent = vi.fn()
+  const row: WorkerDockRowView = {
+    id: 'invocation-1',
+    dispatchId: 'invocation-1',
+    source: 'source',
+    kind: 'agent',
+    name: 'Old agent',
+    title: 'Verify the journal',
+    model: null,
+    state: 'failed',
+    changedAt: 100,
+    startedAt: 0,
+    reason: 'Original failure.',
+    settlement: 'first-failure',
+    resultId: null,
+    stoppable: false,
+    ownerActionsAvailable: true
+  }
+  render(
+    <TooltipProvider>
+      <NativeChatBackgroundTasksStatus
         tasks={[]}
         settledTasks={[]}
-        childViews={[finished('a', 400_000, 520_000), finished('b', 700_000, 760_000)]}
-        indicatorActive
-        supportsTaskStop
+        supportsTaskStop={false}
         offersStopAll={false}
         stoppingTaskIds={new Set()}
         stoppingAll={false}
+        indicatorActive={false}
+        isVisible
+        expanded
+        onExpandedChange={() => {}}
         onStop={() => {}}
+        workerRows={new Map([[row.id, row]])}
+        workerIdentities={[row]}
+        onShowProviderDetails={details}
+        onShowAgent={agent}
       />
-    </Profiler>
+    </TooltipProvider>
   )
-  const rows = screen.getAllByRole('listitem').map((row) => row.textContent)
-  expect(rows).toEqual(['child a · Agent2m 0s', 'child b · Agent1m 0s'])
-  committed.mockClear()
-  act(() => vi.advanceTimersByTime(5_000))
-  expect(committed).not.toHaveBeenCalled()
-  expect(vi.getTimerCount()).toBe(0)
-})
-
-it("shows an agent by the provider's id, beside its own Stop, and leaves command rows inert", () => {
-  const running = (id: string, kind: 'agent' | 'command') => ({
-    id: `host-${id}`,
-    providerId: `provider-${id}`,
-    kind,
-    description: `child ${id}`,
-    state: 'working' as const,
-    membership: 'live' as const,
-    firstObservedAt: 1_000,
-    observedAt: 2_000,
-    stoppable: true,
-    invocation: { invocationId: `spawn-${id}`, generation: 1 }
-  })
-  const onShowAgent = vi.fn()
-  const onStop = vi.fn()
-  render(
-    <NativeChatBackgroundTasksStatus
-      expanded
-      onExpandedChange={() => {}}
-      isVisible
-      tasks={[]}
-      settledTasks={[]}
-      childViews={[running('a', 'agent'), running('s', 'command')]}
-      indicatorActive
-      supportsTaskStop
-      offersStopAll={false}
-      stoppingTaskIds={new Set()}
-      stoppingAll={false}
-      onStop={onStop}
-      onShowAgent={onShowAgent}
-    />
+  // The newest needs-attention row is the lead row: it opens from its own Show.
+  const opener = screen.getByRole('button', { name: 'Show Old agent' })
+  fireEvent.click(opener)
+  expect(details).toHaveBeenCalledWith(
+    expect.objectContaining({
+      kind: 'agent',
+      settlement: 'first-failure',
+      reason: 'Original failure.'
+    }),
+    opener
   )
-  fireEvent.click(screen.getByRole('button', { name: 'Show child a in the conversation' }))
-  expect(onShowAgent).toHaveBeenCalledWith('provider-a')
-  expect(onStop).not.toHaveBeenCalled()
-  expect(screen.queryByRole('button', { name: /Show child s/ })).toBeNull()
+  expect(agent).not.toHaveBeenCalled()
 })

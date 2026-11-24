@@ -1,6 +1,6 @@
 # Orca Local
 
-This fork follows the behavior described by [sglanzer/orca's local fork guide](https://github.com/sglanzer/orca/blob/427763d/LOCAL-FORK.md). The installed local build integrates original Orca `v1.4.255`, commit `084ce0eebbdda3f665251984804f2238be666296`, over our previous original-upstream base `641e4792b966960d65bd82a3744fe087a5ac05cb`. See the completed cutover record below for qualification and remaining limits. The colleague's `v1.4.224` fork is a historical reference; use this checkout's commands and recovery implementation.
+This fork follows the behavior described by [sglanzer/orca's local fork guide](https://github.com/sglanzer/orca/blob/427763d/LOCAL-FORK.md). This update integrates original Orca `v1.4.273`, commit `7027c7ecce594d2295c47e9afc9004b1eb6c83bb`, over the previous `v1.4.255` base `084ce0eebbdda3f665251984804f2238be666296`. See the completed cutover record below for qualification and remaining limits. The colleague's `v1.4.224` fork is a historical reference; use this checkout's commands and recovery implementation.
 
 `oc-clean-local-build` is the single maintained product branch and the fork's GitHub default. Build and run from the permanent checkout at `/Users/scolnz/accedian/git/orca`. Upstream-update branches are temporary candidates; retire them after promotion and first-use validation.
 
@@ -10,10 +10,10 @@ OpenClaw session discovery, state-directory environment forwarding, automation d
 
 Use Node 24, the pnpm version pinned in `package.json`, and the Bun version in `config/.bun-version`. Install the platform's native build tools described in [CONTRIBUTING.md](../.github/CONTRIBUTING.md#local-setup). Keep this checkout in a permanent location.
 
-For `v1.4.255`, the pins are Node 24, pnpm 12.14.0, Bun 1.4.4, and Electron 43.8.6. Check executable versions rather than assuming the shell's defaults match. After activating Node 24, a project-local pnpm bootstrap on POSIX shells is:
+For `v1.4.273`, the pins are Node 24, pnpm 12.18.0, Bun 1.4.4, and Electron 43.8.10. Check executable versions rather than assuming the shell's defaults match. After activating Node 24, a project-local pnpm bootstrap on POSIX shells is:
 
 ```sh
-npm install --prefix .tmp/fork-tools --no-save --package-lock=false --ignore-scripts pnpm@12.14.0
+npm install --prefix .tmp/fork-tools --no-save --package-lock=false --ignore-scripts pnpm@12.18.0
 export PATH="$PWD/.tmp/fork-tools/node_modules/.bin:$PATH"
 export ORCA_PNPM_GLOBAL_VIRTUAL_STORE=0
 node --version
@@ -98,7 +98,7 @@ The installer remembers the checkout, Node executable, profile, and recovery-roo
 
 ## Updates and verification
 
-Quit the source app before updating this branch. Pull reviewed changes from this fork's `oc-clean-local-build` branch with `git pull --ff-only`, then repeat dependency installation and the build commands above. Reopen the same launcher and profile. This pulls published fork updates; importing original Orca changes is a separate maintenance operation described below.
+Quit the source app before updating this branch. Preserve a closed-profile archive and the Codex history outside that profile before a version change: current upstream can migrate native chat storage and link shared account history into the normal `~/.codex` store. Restoring only `orca-local` is not a complete rollback for those changes. Pull reviewed changes from this fork's `oc-clean-local-build` branch with `git pull --ff-only`, then repeat dependency installation and the build commands above. Reopen the same launcher and profile. This pulls published fork updates; importing original Orca changes is a separate maintenance operation described below.
 
 Run the recovery checks against disposable synthetic data after building:
 

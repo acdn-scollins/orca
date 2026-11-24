@@ -23,7 +23,7 @@ const builtProfileState = path.resolve(
 )
 
 export function profileStateAccess() {
-  return require(path.join(builtProfileState, 'profile-state-access.js'))
+  return require(path.join(builtProfileState, 'access/profile-state-access.js'))
 }
 
 export const PROFILE_ENTRIES = [
@@ -32,6 +32,7 @@ export const PROFILE_ENTRIES = [
   'orca-profile-index.json',
   'orca-profile-index.json.bak',
   'agent-session-journal.db',
+  'agent-session-domain.db',
   'agent-session-authority.key',
   'orchestration.db',
   'agent-session-attachments',
@@ -43,6 +44,13 @@ export const PROFILE_ENTRIES = [
   'http1-compatibility.json',
   'mobile-notification-dismissals.json',
   'native-chat-pastes',
+  'chat-scratch',
+  'bots',
+  'bot-items.sqlite',
+  'bot-work.sqlite',
+  'bot-look-around.json',
+  'bot-memory-salvage.json',
+  'bot-share-picks.json',
   'native-chat-visuals',
   'orca-e2ee-keypair.json',
   'orca-devices.json',
@@ -142,7 +150,7 @@ export async function snapshotDatabase(source, target) {
     path.join(builtProfileState, '../../sqlite/sync-database.js')
   )
   const { writeProfileStateDatabaseSnapshotAsync } = require(
-    path.join(builtProfileState, 'profile-state-database-snapshot.js')
+    path.join(builtProfileState, 'database/profile-state-database-snapshot.js')
   )
   const db = new Database(source, { readonly: true, fileMustExist: true, timeout: 2000 })
   try {
@@ -178,6 +186,12 @@ export async function snapshotFile(source, target) {
   return { sha256: await fileDigest(target), size: (await stat(target)).size }
 }
 
+export function chatJournalFile(profile) {
+  return ['agent-session-domain.db', 'agent-session-journal.db']
+    .map((name) => path.join(profile, name))
+    .find(existsSync)
+}
+
 export function inspectProfile(profile) {
   const index = JSON.parse(readFileSync(path.join(profile, 'orca-profile-index.json'), 'utf8'))
   if (
@@ -188,7 +202,7 @@ export function inspectProfile(profile) {
   }
   const documents = {}
   const { readProfileStateDomains } = require(
-    path.join(builtProfileState, 'profile-state-domain-reader.js')
+    path.join(builtProfileState, 'documents/profile-state-domain-reader.js')
   )
   for (const item of index.profiles) {
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(item.id)) {
@@ -216,13 +230,18 @@ export function inspectProfile(profile) {
     }
     documents[item.id] = checked.values.size
   }
-  const journal = path.join(profile, 'agent-session-journal.db')
-  for (const database of [journal, path.join(profile, 'orchestration.db')]) {
-    if (existsSync(database)) {
+  const journal = chatJournalFile(profile)
+  for (const database of [
+    journal,
+    ...['orchestration.db', 'bot-items.sqlite', 'bot-work.sqlite'].map((name) =>
+      path.join(profile, name)
+    )
+  ]) {
+    if (database && existsSync(database)) {
       checkDatabase(database)
     }
   }
-  const sessions = existsSync(journal)
+  const sessions = journal
     ? queryDatabase(
         journal,
         (db) => db.prepare('SELECT count(*) AS n FROM agent_session_records').get().n

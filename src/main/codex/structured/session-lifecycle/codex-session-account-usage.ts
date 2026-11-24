@@ -1,6 +1,6 @@
-import { requireLegacyAgentSessionAccountHome } from '../../../../shared/agent-session/lifecycle/agent-session-account-home'
+import { requireLegacyAgentSessionAccountHome } from '../../../../shared/agent-session/lifecycle/accounts/agent-session-account-home'
 import type { CodexAppServerRpc } from '../../app-server/codex-app-server-session'
-import { normalizeRuntimePathForComparison } from '../../../../shared/cross-platform-path'
+import { normalizeRuntimePathForComparison } from '../../../../shared/file-access/cross-platform-path'
 import {
   resolveCodexHomeProcessLockKey,
   withCodexHomeProcessLock
@@ -10,7 +10,7 @@ import {
   mapCodexRpcRateLimits,
   type CodexAccountUsageRead,
   type RpcRateLimitsResponse
-} from '../../../rate-limits/codex-rpc-rate-limit-mapper'
+} from '../../../rate-limits/providers/codex/codex-rpc-rate-limit-mapper'
 import {
   runCodexProviderAppServer,
   type CodexProviderInvocationDeps

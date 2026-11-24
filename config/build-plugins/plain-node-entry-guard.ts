@@ -15,18 +15,20 @@ type OutputChunk = Rollup.OutputChunk
 
 // Plain-Node processes and CLI modules cannot load Electron's API.
 const PLAIN_NODE_ENTRY_NAMES = [
+  'backend-entry',
   'browser-extension-native-host-supervisor-entry',
   'daemon-entry',
   'parcel-watcher-process-entry',
   // Utility process on desktop, forked child in orcad.
   'stt-worker',
+  'utility-worker-host-entry',
   'session-scanner-service-entry',
   'computer-sidecar',
   'wsl-transcript-fs-process-entry',
   'orcad/orcad-local-serve-selection-entry',
   // ELECTRON_RUN_AS_NODE plugin worker host; it now bundles sucrase for TypeScript workers.
   'plugin-host-entry',
-  'persistence/profile-state/profile-state-database-snapshot',
+  'persistence/profile-state/database/profile-state-database-snapshot',
   'sqlite/sync-database',
   ...CLI_MAIN_ENTRY_NAMES
 ] as const
